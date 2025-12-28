@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jerard Francis Badminton Court Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        const Icon = ({ name, className = "w-5 h-5", ...props }) => {
+            const iconRef = React.useRef(null);
+            
+            React.useEffect(() => {
+                if (iconRef.current && window.lucide) {
+                    const icon = window.lucide.createElement(window.lucide[name]);
+                    iconRef.current.innerHTML = '';
+                    iconRef.current.appendChild(icon);
+                }
+            }, [name]);
+            
+            return <span ref={iconRef} className={className} {...props}></span>;
+        };
+
+        function BadmintonPairingApp() {
+            const [players, setPlayers] = useState([]);
+            const [newPlayerName, setNewPlayerName] = useState('');
+            const [pairings, setPairings] = useState(null);
+            const [scores, setScores] = useState({});
+            const [playerStats, setPlayerStats] = useState({});
+            const [roundNumber, setRoundNumber] = useState(0);
+            const [showStats, setShowStats] = useState(false);
+
+            const shareOnWhatsApp = () => {
+                const message = encodeURIComponent("Dear fellow birdies, lets give this app a shot and not make any holes while I try to fix it");
+                const url = encodeURIComponent(window.location.href);
+                const whatsappUrl = `https://wa.me/?text=${message}%0A%0A${url}`;
+                window.open(whatsappUrl, '_blank');
+            };
+
+            const addPlayer = () => {
+                if (newPlayerName.trim() && !players.includes(newPlayerName.trim())) {
+                    const name = newPlayerName.trim();
+                    setPlayers([...players, name]);
+                    setPlayerStats(prev => ({
+                        ...prev,
+                        [name]: { wins: 0, losses: 0, consecutiveWins: 0, totalGamesPlayed: 0 }
+                    }));
+                    setNewPlayerName('');
+                }
+            };
+
+            const removePlayer = (playerToRemove) => {
+                setPlayers(players.filter(p => p !== playerToRemove));
+                const newStats = { ...playerStats };
+                delete newStats[playerToRemove];
+                setPlayerStats(newStats);
+            };
+
+            const clearAllPlayers = () => {
+                setPlayers([]);
+                setPairings(null);
+                setPlayerStats({});
+                setScores({});
+                setRoundNumber(0);
+            };
+
+            const shuffleArray = (array) => {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            };
+
+            const generatePairings = () => {
+                if (players.length < 4) {
+                    alert('You need at least 4 players to create pairings for courts!');
+                    return;
+                }
+
+                const waitingPlayers = [];
+                const regularPlayers = [];
+                const hotStreakPlayers = [];
+
+                players.forEach(player => {
+                    const stats = playerStats[player];
+                    if (pairings && pairings.remaining.includes(player)) {
+                        waitingPlayers.push(player);
+                    } else if (stats.consecutiveWins >= 3) {
+                        hotStreakPlayers.push(player);
+                    } else {
+                        regularPlayers.push(player);
+                    }
+                });
+
+                const prioritizedPlayers = [...shuffleArray(waitingPlayers), ...shuffleArray(regularPlayers), ...shuffleArray(hotStreakPlayers)];
+
+                const courts = [];
+                const numCourts = Math.min(3, Math.floor(prioritizedPlayers.length / 4));
+                
+                for (let i = 0; i < numCourts; i++) {
+                    const team1 = [prioritizedPlayers[i * 4], prioritizedPlayers[i * 4 + 1]];
+                    const team2 = [prioritizedPlayers[i * 4 + 2], prioritizedPlayers[i * 4 + 3]];
+                    courts.push({ team1, team2 });
+                }
+
+                const remaining = prioritizedPlayers.slice(courts.length * 4);
+                
+                setPairings({ courts, remaining });
+                setScores({});
+                setRoundNumber(prev => prev + 1);
+            };
+
+            const handleScoreChange = (courtIndex, team, value) => {
+                setScores(prev => ({
+                    ...prev,
+                    [courtIndex]: {
+                        ...prev[courtIndex],
+                        [team]: value
+                    }
+                }));
+            };
+
+            const allScoresEntered = () => {
+                if (!pairings) return false;
+                for (let i = 0; i < pairings.courts.length; i++) {
+                    if (!scores[i] || scores[i].team1 === undefined || scores[i].team2 === undefined) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+
+            const submitScores = () => {
+                if (!allScoresEntered()) {
+                    alert('Please enter scores for all courts before proceeding!');
+                    return;
+                }
+
+                const newStats = { ...playerStats };
+
+                pairings.courts.forEach((court, courtIndex) => {
+                    const score1 = parseInt(scores[courtIndex].team1);
+                    const score2 = parseInt(scores[courtIndex].team2);
+
+                    const winners = score1 > score2 ? court.team1 : court.team2;
+                    const losers = score1 > score2 ? court.team2 : court.team1;
+
+                    winners.forEach(player => {
+                        newStats[player].wins += 1;
+                        newStats[player].consecutiveWins += 1;
+                        newStats[player].totalGamesPlayed += 1;
+                    });
+
+                    losers.forEach(player => {
+                        newStats[player].losses += 1;
+                        newStats[player].consecutiveWins = 0;
+                        newStats[player].totalGamesPlayed += 1;
+                    });
+                });
+
+                setPlayerStats(newStats);
+                generatePairings();
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <Icon name="Users" className="w-8 h-8 text-blue-600" />
+                                    <h1 className="text-3xl font-bold text-gray-800">Jerard Francis Badminton Court Manager</h1>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={shareOnWhatsApp}
+                                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                                    >
+                                        <Icon name="Share2" className="w-5 h-5" />
+                                        <span>Share</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setShowStats(!showStats)}
+                                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+                                    >
+                                        <Icon name="BarChart3" className="w-5 h-5" />
+                                        <span>{showStats ? 'Hide' : 'Show'} Stats</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {roundNumber > 0 && (
+                                <div className="mb-4 p-3 bg-blue-100 rounded-lg">
+                                    <p className="text-lg font-semibold text-blue-800">Round {roundNumber}</p>
+                                </div>
+                            )}
+
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Add Player
+                                </label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={newPlayerName}
+                                        onChange={(e) => setNewPlayerName(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
+                                        placeholder="Enter player name"
+                                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                    <button
+                                        onClick={addPlayer}
+                                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                                    >
+                                        <Icon name="Plus" className="w-5 h-5" />
+                                        <span>Add</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <div className="flex justify-between items-center mb-3">
+                                    <h2 className="text-lg font-semibold text-gray-800">
+                                        Players ({players.length})
+                                    </h2>
+                                    {players.length > 0 && (
+                                        <button
+                                            onClick={clearAllPlayers}
+                                            className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center gap-1"
+                                        >
+                                            <Icon name="Trash2" className="w-4 h-4" />
+                                            <span>Clear All</span>
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {players.length === 0 ? (
+                                        <p className="text-gray-500 text-sm">No players added yet</p>
+                                    ) : (
+                                        players.map((player, index) => {
+                                            const stats = playerStats[player];
+                                            const isOnStreak = stats && stats.consecutiveWins >= 3;
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className={`px-3 py-2 rounded-lg flex items-center gap-2 ${
+                                                        isOnStreak ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-400' : 'bg-blue-100 text-blue-800'
+                                                    }`}
+                                                >
+                                                    <span>{player}</span>
+                                                    {isOnStreak && <Icon name="Trophy" className="w-4 h-4" />}
+                                                    <button
+                                                        onClick={() => removePlayer(player)}
+                                                        className="hover:bg-blue-200 rounded-full p-1"
+                                                    >
+                                                        <Icon name="X" className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+
+                            {!pairings && (
+                                <button
+                                    onClick={generatePairings}
+                                    disabled={players.length < 4}
+                                    className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                                        players.length >= 4
+                                            ? 'bg-green-600 text-white hover:bg-green-700'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
+                                >
+                                    <Icon name="Shuffle" className="w-5 h-5" />
+                                    <span>Start Game - Generate Pairings</span>
+                                </button>
+                            )}
+                        </div>
+
+                        {showStats && (
+                            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <Icon name="Trophy" className="w-6 h-6 text-yellow-500" />
+                                    <span>Player Statistics</span>
+                                </h2>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="border-b-2 border-gray-300">
+                                                <th className="text-left py-2 px-3">Player</th>
+                                                <th className="text-center py-2 px-3">Wins</th>
+                                                <th className="text-center py-2 px-3">Losses</th>
+                                                <th className="text-center py-2 px-3">Win Rate</th>
+                                                <th className="text-center py-2 px-3">Streak</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {Object.entries(playerStats)
+                                                .sort((a, b) => b[1].wins - a[1].wins)
+                                                .map(([player, stats]) => {
+                                                    const winRate = stats.totalGamesPlayed > 0 
+                                                        ? ((stats.wins / stats.totalGamesPlayed) * 100).toFixed(1) 
+                                                        : '0.0';
+                                                    return (
+                                                        <tr key={player} className="border-b border-gray-200">
+                                                            <td className="py-2 px-3 font-medium">{player}</td>
+                                                            <td className="text-center py-2 px-3 text-green-600">{stats.wins}</td>
+                                                            <td className="text-center py-2 px-3 text-red-600">{stats.losses}</td>
+                                                            <td className="text-center py-2 px-3">{winRate}%</td>
+                                                            <td className="text-center py-2 px-3">
+                                                                {stats.consecutiveWins > 0 && (
+                                                                    <span className={`px-2 py-1 rounded text-sm ${
+                                                                        stats.consecutiveWins >= 3 ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'
+                                                                    }`}>
+                                                                        {stats.consecutiveWins} 🔥
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {pairings && (
+                            <div className="space-y-4">
+                                {pairings.courts.map((court, index) => (
+                                    <div
+                                        key={index}
+                                        className="bg-white rounded-lg shadow-lg p-6"
+                                    >
+                                        <h3 className="text-xl font-bold text-gray-800 mb-4">
+                                            Court {index + 1}
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                            <div className="bg-blue-50 rounded-lg p-4">
+                                                <h4 className="font-semibold text-blue-800 mb-2">Team 1</h4>
+                                                <div className="space-y-1">
+                                                    {court.team1.map((player, pIndex) => (
+                                                        <div key={pIndex} className="text-gray-700">
+                                                            {player}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="bg-green-50 rounded-lg p-4">
+                                                <h4 className="font-semibold text-green-800 mb-2">Team 2</h4>
+                                                <div className="space-y-1">
+                                                    {court.team2.map((player, pIndex) => (
+                                                        <div key={pIndex} className="text-gray-700">
+                                                            {player}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-4 items-center">
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-sm font-medium">Team 1 Score:</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={scores[index]?.team1 || ''}
+                                                    onChange={(e) => handleScoreChange(index, 'team1', e.target.value)}
+                                                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                    placeholder="0"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-sm font-medium">Team 2 Score:</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={scores[index]?.team2 || ''}
+                                                    onChange={(e) => handleScoreChange(index, 'team2', e.target.value)}
+                                                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                                    placeholder="0"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {pairings.remaining.length > 0 && (
+                                    <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6">
+                                        <h3 className="text-lg font-bold text-yellow-800 mb-2">
+                                            Resting Players ({pairings.remaining.length})
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {pairings.remaining.map((player, index) => {
+                                                const stats = playerStats[player];
+                                                const mustRest = stats && stats.consecutiveWins >= 3;
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        className={`px-3 py-2 rounded-lg flex items-center gap-1 ${
+                                                            mustRest ? 'bg-yellow-200 text-yellow-900 border-2 border-yellow-400' : 'bg-yellow-100 text-yellow-800'
+                                                        }`}
+                                                    >
+                                                        {player}
+                                                        {mustRest && <Icon name="Trophy" className="w-4 h-4" />}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={submitScores}
+                                    disabled={!allScoresEntered()}
+                                    className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                                        allScoresEntered()
+                                            ? 'bg-green-600 text-white hover:bg-green-700'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
+                                >
+                                    <Icon name="Shuffle" className="w-5 h-5" />
+                                    <span>Submit Scores & Generate Next Round</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<BadmintonPairingApp />);
+    </script>
+</body>
+</html>
