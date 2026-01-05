@@ -16,6 +16,7 @@
     <script type="text/babel">
         const { useState } = React;
         
+        // Lucide icons as React components
         const Icon = ({ name, className = "w-5 h-5", ...props }) => {
             const iconRef = React.useRef(null);
             
@@ -421,18 +422,27 @@
                                     </div>
                                 )}
 
-                                <button
-                                    onClick={submitScores}
-                                    disabled={!allScoresEntered()}
-                                    className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                                        allScoresEntered()
-                                            ? 'bg-green-600 text-white hover:bg-green-700'
-                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    }`}
-                                >
-                                    <Icon name="Shuffle" className="w-5 h-5" />
-                                    <span>Submit Scores & Generate Next Round</span>
-                                </button>
+                                <div className="flex gap-4">
+                                    <button
+                                        onClick={generatePairings}
+                                        className="flex-1 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                                    >
+                                        <Icon name="Shuffle" className="w-5 h-5" />
+                                        <span>Shuffle Without Scores</span>
+                                    </button>
+                                    <button
+                                        onClick={submitScores}
+                                        disabled={!allScoresEntered()}
+                                        className={`flex-1 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                                            allScoresEntered()
+                                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        <Icon name="Trophy" className="w-5 h-5" />
+                                        <span>Submit Scores & Next Round</span>
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
