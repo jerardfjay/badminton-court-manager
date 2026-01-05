@@ -48,9 +48,10 @@
             };
 
             const addPlayer = () => {
-                if (newPlayerName.trim() && !players.includes(newPlayerName.trim())) {
+                if (newPlayerName.trim() && !players.some(p => p.name === newPlayerName.trim())) {
                     const name = newPlayerName.trim();
-                    setPlayers([...players, name]);
+                    const newPlayer = { name, skillLevel: 3 };
+                    setPlayers([...players, newPlayer]);
                     setPlayerStats(prev => ({
                         ...prev,
                         [name]: { wins: 0, losses: 0, consecutiveWins: 0, totalGamesPlayed: 0 }
@@ -59,8 +60,14 @@
                 }
             };
 
+            const updateSkillLevel = (playerName, newLevel) => {
+                setPlayers(players.map(p => 
+                    p.name === playerName ? { ...p, skillLevel: parseInt(newLevel) } : p
+                ));
+            };
+
             const removePlayer = (playerToRemove) => {
-                setPlayers(players.filter(p => p !== playerToRemove));
+                setPlayers(players.filter(p => p.name !== playerToRemove));
                 const newStats = { ...playerStats };
                 delete newStats[playerToRemove];
                 setPlayerStats(newStats);
@@ -94,8 +101,8 @@
                 const hotStreakPlayers = [];
 
                 players.forEach(player => {
-                    const stats = playerStats[player];
-                    if (pairings && pairings.remaining.includes(player)) {
+                    const stats = playerStats[player.name];
+                    if (pairings && pairings.remaining.some(p => p.name === player.name)) {
                         waitingPlayers.push(player);
                     } else if (stats.consecutiveWins >= 3) {
                         hotStreakPlayers.push(player);
@@ -110,8 +117,15 @@
                 const numCourts = Math.min(3, Math.floor(prioritizedPlayers.length / 4));
                 
                 for (let i = 0; i < numCourts; i++) {
-                    const team1 = [prioritizedPlayers[i * 4], prioritizedPlayers[i * 4 + 1]];
-                    const team2 = [prioritizedPlayers[i * 4 + 2], prioritizedPlayers[i * 4 + 3]];
+                    const courtPlayers = prioritizedPlayers.slice(i * 4, i * 4 + 4);
+                    
+                    // Sort by skill level descending
+                    courtPlayers.sort((a, b) => b.skillLevel - a.skillLevel);
+                    
+                    // Balanced pairing: 1st & 4th vs 2nd & 3rd
+                    const team1 = [courtPlayers[0], courtPlayers[3]];
+                    const team2 = [courtPlayers[1], courtPlayers[2]];
+                    
                     courts.push({ team1, team2 });
                 }
 
@@ -158,15 +172,15 @@
                     const losers = score1 > score2 ? court.team2 : court.team1;
 
                     winners.forEach(player => {
-                        newStats[player].wins += 1;
-                        newStats[player].consecutiveWins += 1;
-                        newStats[player].totalGamesPlayed += 1;
+                        newStats[player.name].wins += 1;
+                        newStats[player.name].consecutiveWins += 1;
+                        newStats[player.name].totalGamesPlayed += 1;
                     });
 
                     losers.forEach(player => {
-                        newStats[player].losses += 1;
-                        newStats[player].consecutiveWins = 0;
-                        newStats[player].totalGamesPlayed += 1;
+                        newStats[player.name].losses += 1;
+                        newStats[player.name].consecutiveWins = 0;
+                        newStats[player.name].totalGamesPlayed += 1;
                     });
                 });
 
@@ -350,21 +364,37 @@
                                         </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                             <div className="bg-blue-50 rounded-lg p-4">
-                                                <h4 className="font-semibold text-blue-800 mb-2">Team 1</h4>
+                                                <h4 className="font-semibold text-blue-800 mb-2">
+                                                    Team 1 
+                                                    <span className="text-xs ml-2 text-gray-600">
+                                                        (Avg: {((court.team1[0].skillLevel + court.team1[1].skillLevel) / 2).toFixed(1)}⭐)
+                                                    </span>
+                                                </h4>
                                                 <div className="space-y-1">
                                                     {court.team1.map((player, pIndex) => (
-                                                        <div key={pIndex} className="text-gray-700">
-                                                            {player}
+                                                        <div key={pIndex} className="text-gray-700 flex items-center gap-2">
+                                                            <span>{player.name}</span>
+                                                            <span className="text-xs text-gray-500">
+                                                                {'⭐'.repeat(player.skillLevel)}
+                                                            </span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                             <div className="bg-green-50 rounded-lg p-4">
-                                                <h4 className="font-semibold text-green-800 mb-2">Team 2</h4>
+                                                <h4 className="font-semibold text-green-800 mb-2">
+                                                    Team 2
+                                                    <span className="text-xs ml-2 text-gray-600">
+                                                        (Avg: {((court.team2[0].skillLevel + court.team2[1].skillLevel) / 2).toFixed(1)}⭐)
+                                                    </span>
+                                                </h4>
                                                 <div className="space-y-1">
                                                     {court.team2.map((player, pIndex) => (
-                                                        <div key={pIndex} className="text-gray-700">
-                                                            {player}
+                                                        <div key={pIndex} className="text-gray-700 flex items-center gap-2">
+                                                            <span>{player.name}</span>
+                                                            <span className="text-xs text-gray-500">
+                                                                {'⭐'.repeat(player.skillLevel)}
+                                                            </span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -404,7 +434,7 @@
                                         </h3>
                                         <div className="flex flex-wrap gap-2">
                                             {pairings.remaining.map((player, index) => {
-                                                const stats = playerStats[player];
+                                                const stats = playerStats[player.name];
                                                 const mustRest = stats && stats.consecutiveWins >= 3;
                                                 return (
                                                     <div
@@ -413,7 +443,8 @@
                                                             mustRest ? 'bg-yellow-200 text-yellow-900 border-2 border-yellow-400' : 'bg-yellow-100 text-yellow-800'
                                                         }`}
                                                     >
-                                                        {player}
+                                                        <span>{player.name}</span>
+                                                        <span className="text-xs">{'⭐'.repeat(player.skillLevel)}</span>
                                                         {mustRest && <Icon name="Trophy" className="w-4 h-4" />}
                                                     </div>
                                                 );
