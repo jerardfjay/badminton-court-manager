@@ -39,6 +39,7 @@
             const [playerStats, setPlayerStats] = useState({});
             const [roundNumber, setRoundNumber] = useState(0);
             const [showStats, setShowStats] = useState(false);
+            const [balanceBySkill, setBalanceBySkill] = useState(true);
 
             const shareOnWhatsApp = () => {
                 const message = encodeURIComponent("Dear fellow birdies, lets give this app a shot and not make any holes while I try to fix it");
@@ -74,11 +75,13 @@
             };
 
             const clearAllPlayers = () => {
-                setPlayers([]);
-                setPairings(null);
-                setPlayerStats({});
-                setScores({});
-                setRoundNumber(0);
+                if (window.confirm('Are you sure you want to clear all players and reset the game?')) {
+                    setPlayers([]);
+                    setPairings(null);
+                    setPlayerStats({});
+                    setScores({});
+                    setRoundNumber(0);
+                }
             };
 
             const shuffleArray = (array) => {
@@ -101,8 +104,8 @@
                 const hotStreakPlayers = [];
 
                 players.forEach(player => {
-                    const stats = playerStats[player.name];
-                    if (pairings && pairings.remaining.some(p => p.name === player.name)) {
+                    const stats = playerStats[player.name] || { consecutiveWins: 0 };
+                    if (pairings && pairings.remaining && pairings.remaining.some(p => p.name === player.name)) {
                         waitingPlayers.push(player);
                     } else if (stats.consecutiveWins >= 3) {
                         hotStreakPlayers.push(player);
@@ -119,14 +122,22 @@
                 for (let i = 0; i < numCourts; i++) {
                     const courtPlayers = prioritizedPlayers.slice(i * 4, i * 4 + 4);
                     
-                    // Sort by skill level descending
-                    courtPlayers.sort((a, b) => b.skillLevel - a.skillLevel);
-                    
-                    // Balanced pairing: 1st & 4th vs 2nd & 3rd
-                    const team1 = [courtPlayers[0], courtPlayers[3]];
-                    const team2 = [courtPlayers[1], courtPlayers[2]];
-                    
-                    courts.push({ team1, team2 });
+                    if (balanceBySkill) {
+                        // Sort by skill level descending
+                        courtPlayers.sort((a, b) => b.skillLevel - a.skillLevel);
+                        
+                        // Balanced pairing: 1st & 4th vs 2nd & 3rd
+                        const team1 = [courtPlayers[0], courtPlayers[3]];
+                        const team2 = [courtPlayers[1], courtPlayers[2]];
+                        
+                        courts.push({ team1, team2 });
+                    } else {
+                        // Random pairing
+                        const team1 = [courtPlayers[0], courtPlayers[1]];
+                        const team2 = [courtPlayers[2], courtPlayers[3]];
+                        
+                        courts.push({ team1, team2 });
+                    }
                 }
 
                 const remaining = prioritizedPlayers.slice(courts.length * 4);
@@ -434,8 +445,8 @@
                                         </h3>
                                         <div className="flex flex-wrap gap-2">
                                             {pairings.remaining.map((player, index) => {
-                                                const stats = playerStats[player.name];
-                                                const mustRest = stats && stats.consecutiveWins >= 3;
+                                                const stats = playerStats[player.name] || { consecutiveWins: 0 };
+                                                const mustRest = stats.consecutiveWins >= 3;
                                                 return (
                                                     <div
                                                         key={index}
