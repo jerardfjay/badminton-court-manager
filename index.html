@@ -14,8 +14,8 @@
     
     <script type="text/babel">
         const { useState, useEffect } = React;
-        
-        // Simple icon component
+
+// Simple icon component
         const Icon = ({ type, className = "w-5 h-5" }) => {
             const icons = {
                 users: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
@@ -32,7 +32,7 @@
             return icons[type] || null;
         };
 
-        function BadmintonPairingApp() {
+function BadmintonPairingApp() {
             const [players, setPlayers] = useState([]);
             const [newPlayerName, setNewPlayerName] = useState('');
             const [pairings, setPairings] = useState(null);
@@ -62,7 +62,9 @@
                 return () => clearInterval(interval);
             }, [lastResetDate]);
 
-            const loadFromStorage = async () => {
+//Storage and functions
+
+const loadFromStorage = async () => {
                 try {
                     const lifetimeData = await window.storage.get('lifetime_stats');
                     const lastReset = await window.storage.get('last_reset_date');
@@ -142,7 +144,9 @@
                 setTimeUntilReset(`${hours}h ${minutes}m`);
             };
 
-            const shareOnWhatsApp = () => {
+//Player management functions
+
+const shareOnWhatsApp = () => {
                 const message = encodeURIComponent("Dear fellow birdies, lets give this app a shot and not make any holes while I try to fix it");
                 const url = encodeURIComponent(window.location.href);
                 const whatsappUrl = `https://wa.me/?text=${message}%0A%0A${url}`;
@@ -224,7 +228,9 @@
                 return shuffled;
             };
 
-            const generatePairings = async () => {
+// Pairing and Scoring functions
+
+const generatePairings = async () => {
                 if (players.length < 4) {
                     alert('You need at least 4 players to create pairings for courts!');
                     return;
@@ -349,7 +355,9 @@
                 generatePairings();
             };
 
-            if (loading) {
+// Loading State and JSX Start
+
+if (loading) {
                 return (
                     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
                         <div className="text-xl text-gray-600">Loading...</div>
@@ -426,7 +434,9 @@
                                 </div>
                             </div>
 
-                            <div className="mb-6">
+// Player list display
+
+<div className="mb-6">
                                 <div className="flex justify-between items-center mb-3">
                                     <h2 className="text-lg font-semibold text-gray-800">
                                         Today's Players ({players.length})
@@ -502,7 +512,9 @@
                             )}
                         </div>
 
-                        {showStats && Object.keys(todayStats).length > 0 && (
+// Statistics Display
+
+{showStats && Object.keys(todayStats).length > 0 && (
                             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                                 <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                                     <Icon type="chart" className="w-6 h-6 text-purple-500" />
@@ -517,32 +529,56 @@
                                                 <th className="text-center py-2 px-3">Losses</th>
                                                 <th className="text-center py-2 px-3">Win Rate</th>
                                                 <th className="text-center py-2 px-3">Streak</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {Object.entries(todayStats)
-                                                .sort((a, b) => b[1].wins - a[1].wins)
-                                                .map(([player, stats]) => (
-							{showLifetimeStats && Object.keys(lifetimeStats).length > 0 && (
-                       					 <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                            					<h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                				  <Icon type="star" className="w-6 h-6 text-yellow-500" />
-                                				  <span>All-Time Leaderboard</span>
-                            					</h2>
-                            				<div className="overflow-x-auto">
-                                			<table className="w-full">
-                                    			<thead>
-                                        			<tr className="border-b-2 border-gray-300">
-                                            				<th className="text-left py-2 px-3">Player</th>
-                                            				<th className="text-center py-2 px-3">Total Wins</th>
-                                            				<th className="text-center py-2 px-3">Total Losses</th>
-                                            				<th className="text-center py-2 px-3">Games</th>
-                                            				<th className="text-center py-2 px-3">Win Rate</th>
-                                        			</tr>
-                                    			</thead>
-							)}
-						    ));
-                                      <tbody>
+</tr>
+                                    </thead>
+                                    <tbody>
+                                        {Object.entries(todayStats)
+                                            .sort((a, b) => b[1].wins - a[1].wins)
+                                            .map(([player, stats]) => {
+                                                const winRate = stats.gamesPlayed > 0 
+                                                    ? ((stats.wins / stats.gamesPlayed) * 100).toFixed(1) 
+                                                    : '0.0';
+                                                return (
+                                                    <tr key={player} className="border-b border-gray-200">
+                                                        <td className="py-2 px-3 font-medium">{player}</td>
+                                                        <td className="text-center py-2 px-3 text-green-600">{stats.wins}</td>
+                                                        <td className="text-center py-2 px-3 text-red-600">{stats.losses}</td>
+                                                        <td className="text-center py-2 px-3">{winRate}%</td>
+                                                        <td className="text-center py-2 px-3">
+                                                            {stats.consecutiveWins > 0 && (
+                                                                <span className={`px-2 py-1 rounded text-sm ${
+                                                                    stats.consecutiveWins >= 3 ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'
+                                                                }`}>
+                                                                    {stats.consecutiveWins} 🔥
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                    {showLifetimeStats && Object.keys(lifetimeStats).length > 0 && (
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <Icon type="star" className="w-6 h-6 text-yellow-500" />
+                                <span>All-Time Leaderboard</span>
+                            </h2>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b-2 border-gray-300">
+                                            <th className="text-left py-2 px-3">Player</th>
+                                            <th className="text-center py-2 px-3">Total Wins</th>
+                                            <th className="text-center py-2 px-3">Total Losses</th>
+                                            <th className="text-center py-2 px-3">Games</th>
+                                            <th className="text-center py-2 px-3">Win Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                                         {Object.entries(lifetimeStats)
                                             .sort((a, b) => b[1].wins - a[1].wins)
                                             .map(([player, stats]) => {
@@ -565,130 +601,134 @@
                         </div>
                     )}
 
-                    {pairings && (
-                        <div className="space-y-4">
-                            {pairings.courts.map((court, index) => (
-                                <div key={index} className="bg-white rounded-lg shadow-lg p-6">
-                                    <h3 className="text-xl font-bold text-gray-800 mb-4">Court {index + 1}</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                        <div className="bg-blue-50 rounded-lg p-4">
-                                            <h4 className="font-semibold text-blue-800 mb-2">
-                                                Team 1 
-                                                <span className="text-xs ml-2 text-gray-600">
-                                                    (Avg: {((court.team1[0].skillLevel + court.team1[1].skillLevel) / 2).toFixed(1)}⭐)
-                                                </span>
-                                            </h4>
-                                            <div className="space-y-1">
-                                                {court.team1.map((player, pIndex) => (
-                                                    <div key={pIndex} className="text-gray-700 flex items-center gap-2">
-                                                        <span>{player.name}</span>
-                                                        <span className="text-xs text-gray-500">
-                                                            {'⭐'.repeat(player.skillLevel)}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="bg-green-50 rounded-lg p-4">
-                                            <h4 className="font-semibold text-green-800 mb-2">
-                                                Team 2
-                                                <span className="text-xs ml-2 text-gray-600">
-                                                    (Avg: {((court.team2[0].skillLevel + court.team2[1].skillLevel) / 2).toFixed(1)}⭐)
-                                                </span>
-                                            </h4>
-                                            <div className="space-y-1">
-                                                {court.team2.map((player, pIndex) => (
-                                                    <div key={pIndex} className="text-gray-700 flex items-center gap-2">
-                                                        <span>{player.name}</span>
-                                                        <span className="text-xs text-gray-500">
-                                                            {'⭐'.repeat(player.skillLevel)}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-4 items-center">
-                                        <div className="flex items-center gap-2">
-                                            <label className="text-sm font-medium">Team 1 Score:</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={scores[index]?.team1 || ''}
-                                                onChange={(e) => handleScoreChange(index, 'team1', e.target.value)}
-                                                className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                                placeholder="0"
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <label className="text-sm font-medium">Team 2 Score:</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={scores[index]?.team2 || ''}
-                                                onChange={(e) => handleScoreChange(index, 'team2', e.target.value)}
-                                                className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                                                placeholder="0"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-
-                            {pairings.remaining.length > 0 && (
-                                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6">
-                                    <h3 className="text-lg font-bold text-yellow-800 mb-2">
-                                        Resting Players ({pairings.remaining.length})
-                                    </h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {pairings.remaining.map((player, index) => {
-                                            const stats = todayStats[player.name] || { consecutiveWins: 0 };
-                                            const mustRest = stats.consecutiveWins >= 3;
-                                            return (
-                                                <div
-                                                    key={index}
-                                                    className={`px-3 py-2 rounded-lg flex items-center gap-1 ${
-                                                        mustRest ? 'bg-yellow-200 text-yellow-900 border-2 border-yellow-400' : 'bg-yellow-100 text-yellow-800'
-                                                    }`}
-                                                >
-                                                    <span>{player.name}</span>
-                                                    <span className="text-xs">{'⭐'.repeat(player.skillLevel)}</span>
-                                                    {mustRest && <Icon type="trophy" className="w-4 h-4" />}
+### Section 10: Court Display & Final Closing (LAST SECTION)
+```javascript
+                        {pairings && (
+                            <div className="space-y-4">
+                                {pairings.courts.map((court, index) => (
+                                    <div key={index} className="bg-white rounded-lg shadow-lg p-6">
+                                        <h3 className="text-xl font-bold text-gray-800 mb-4">Court {index + 1}</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                            <div className="bg-blue-50 rounded-lg p-4">
+                                                <h4 className="font-semibold text-blue-800 mb-2">
+                                                    Team 1 
+                                                    <span className="text-xs ml-2 text-gray-600">
+                                                        (Avg: {((court.team1[0].skillLevel + court.team1[1].skillLevel) / 2).toFixed(1)}⭐)
+                                                    </span>
+                                                </h4>
+                                                <div className="space-y-1">
+                                                    {court.team1.map((player, pIndex) => (
+                                                        <div key={pIndex} className="text-gray-700 flex items-center gap-2">
+                                                            <span>{player.name}</span>
+                                                            <span className="text-xs text-gray-500">
+                                                                {'⭐'.repeat(player.skillLevel)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            );
-                                        })}
+                                            </div>
+                                            <div className="bg-green-50 rounded-lg p-4">
+                                                <h4 className="font-semibold text-green-800 mb-2">
+                                                    Team 2
+                                                    <span className="text-xs ml-2 text-gray-600">
+                                                        (Avg: {((court.team2[0].skillLevel + court.team2[1].skillLevel) / 2).toFixed(1)}⭐)
+                                                    </span>
+                                                </h4>
+                                                <div className="space-y-1">
+                                                    {court.team2.map((player, pIndex) => (
+                                                        <div key={pIndex} className="text-gray-700 flex items-center gap-2">
+                                                            <span>{player.name}</span>
+                                                            <span className="text-xs text-gray-500">
+                                                                {'⭐'.repeat(player.skillLevel)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap gap-4 items-center">
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-sm font-medium">Team 1 Score:</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={scores[index]?.team1 || ''}
+                                                    onChange={(e) => handleScoreChange(index, 'team1', e.target.value)}
+                                                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                    placeholder="0"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-sm font-medium">Team 2 Score:</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={scores[index]?.team2 || ''}
+                                                    onChange={(e) => handleScoreChange(index, 'team2', e.target.value)}
+                                                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                                    placeholder="0"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
+                                ))}
+
+                                {pairings.remaining.length > 0 && (
+                                    <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6">
+                                        <h3 className="text-lg font-bold text-yellow-800 mb-2">
+                                            Resting Players ({pairings.remaining.length})
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {pairings.remaining.map((player, index) => {
+                                                const stats = todayStats[player.name] || { consecutiveWins: 0 };
+                                                const mustRest = stats.consecutiveWins >= 3;
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        className={`px-3 py-2 rounded-lg flex items-center gap-1 ${
+                                                            mustRest ? 'bg-yellow-200 text-yellow-900 border-2 border-yellow-400' : 'bg-yellow-100 text-yellow-800'
+                                                        }`}
+                                                    >
+                                                        <span>{player.name}</span>
+                                                        <span className="text-xs">{'⭐'.repeat(player.skillLevel)}</span>
+                                                        {mustRest && <Icon type="trophy" className="w-4 h-4" />}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <button
+                                        onClick={generatePairings}
+                                        className="flex-1 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                                    >
+                                        <Icon type="shuffle" />
+                                        <span>Shuffle Without Scores</span>
+                                    </button>
+                                    <button
+                                        onClick={submitScores}
+                                        disabled={!allScoresEntered()}
+                                        className={`flex-1 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                                            allScoresEntered()
+                                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        <Icon type="trophy" />
+                                        <span>Submit Scores & Next Round</span>
+                                    </button>
                                 </div>
-                            )}
-
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <button
-                                    onClick={generatePairings}
-                                    className="flex-1 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
-                                >
-                                    <Icon type="shuffle" />
-                                    <span>Shuffle Without Scores</span>
-                                </button>
-                                <button
-                                    onClick={submitScores}
-                                    disabled={!allScoresEntered()}
-                                    className={`flex-1 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                                        allScoresEntered()
-                                            ? 'bg-green-600 text-white hover:bg-green-700'
-                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    }`}
-                                >
-                                    <Icon type="trophy" />
-                                    <span>Submit Scores & Next Round</span>
-                                </button>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
-            </div>
-        );
-    }
+            );
+        }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<BadmintonPairingApp />);
-</script>
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<BadmintonPairingApp />);
+    </script>
+</body>
+</html>
