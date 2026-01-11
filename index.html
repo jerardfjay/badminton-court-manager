@@ -14,8 +14,8 @@
     
     <script type="text/babel">
         const { useState, useEffect } = React;
-
-// Simple icon component
+        
+        // Simple icon component
         const Icon = ({ type, className = "w-5 h-5" }) => {
             const icons = {
                 users: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
@@ -56,15 +56,13 @@ function BadmintonPairingApp() {
                 const interval = setInterval(() => {
                     checkAndResetDaily();
                     updateTimeUntilReset();
-                }, 60000); // Check every minute
+                }, 60000);
 
-                updateTimeUntilReset(); // Initial update
+                updateTimeUntilReset();
                 return () => clearInterval(interval);
             }, [lastResetDate]);
 
-//Storage and functions
-
-const loadFromStorage = async () => {
+            const loadFromStorage = async () => {
                 try {
                     const lifetimeData = await window.storage.get('lifetime_stats');
                     const lastReset = await window.storage.get('last_reset_date');
@@ -80,11 +78,9 @@ const loadFromStorage = async () => {
                     const storedDate = lastReset?.value || today;
                     setLastResetDate(storedDate);
 
-                    // Check if we need to reset
                     if (storedDate !== today) {
                         await resetDailySession();
                     } else {
-                        // Load today's data
                         if (todayData?.value) {
                             setTodayStats(JSON.parse(todayData.value));
                         }
@@ -144,9 +140,7 @@ const loadFromStorage = async () => {
                 setTimeUntilReset(`${hours}h ${minutes}m`);
             };
 
-//Player management functions
-
-const shareOnWhatsApp = () => {
+            const shareOnWhatsApp = () => {
                 const message = encodeURIComponent("Dear fellow birdies, lets give this app a shot and not make any holes while I try to fix it");
                 const url = encodeURIComponent(window.location.href);
                 const whatsappUrl = `https://wa.me/?text=${message}%0A%0A${url}`;
@@ -157,14 +151,12 @@ const shareOnWhatsApp = () => {
                 if (newPlayerName.trim() && !players.some(p => p.name === newPlayerName.trim())) {
                     const name = newPlayerName.trim();
                     
-                    // Get last known skill level or default to 3
                     const lastSkillLevel = lifetimeStats[name]?.lastSkillLevel || 3;
                     
                     const newPlayer = { name, skillLevel: lastSkillLevel };
                     const updatedPlayers = [...players, newPlayer];
                     setPlayers(updatedPlayers);
                     
-                    // Initialize today's stats if new player today
                     if (!todayStats[name]) {
                         const updatedTodayStats = {
                             ...todayStats,
@@ -185,7 +177,6 @@ const shareOnWhatsApp = () => {
                 );
                 setPlayers(updatedPlayers);
                 
-                // Save skill level to lifetime stats
                 const updatedLifetime = {
                     ...lifetimeStats,
                     [playerName]: {
@@ -228,9 +219,7 @@ const shareOnWhatsApp = () => {
                 return shuffled;
             };
 
-// Pairing and Scoring functions
-
-const generatePairings = async () => {
+           const generatePairings = async () => {
                 if (players.length < 4) {
                     alert('You need at least 4 players to create pairings for courts!');
                     return;
@@ -312,7 +301,6 @@ const generatePairings = async () => {
                     const losers = score1 > score2 ? court.team2 : court.team1;
 
                     winners.forEach(player => {
-                        // Update today's stats
                         if (!newTodayStats[player.name]) {
                             newTodayStats[player.name] = { wins: 0, losses: 0, consecutiveWins: 0, gamesPlayed: 0 };
                         }
@@ -320,7 +308,6 @@ const generatePairings = async () => {
                         newTodayStats[player.name].consecutiveWins += 1;
                         newTodayStats[player.name].gamesPlayed += 1;
 
-                        // Update lifetime stats
                         if (!newLifetimeStats[player.name]) {
                             newLifetimeStats[player.name] = { wins: 0, losses: 0, gamesPlayed: 0, lastSkillLevel: player.skillLevel };
                         }
@@ -329,7 +316,6 @@ const generatePairings = async () => {
                     });
 
                     losers.forEach(player => {
-                        // Update today's stats
                         if (!newTodayStats[player.name]) {
                             newTodayStats[player.name] = { wins: 0, losses: 0, consecutiveWins: 0, gamesPlayed: 0 };
                         }
@@ -337,7 +323,6 @@ const generatePairings = async () => {
                         newTodayStats[player.name].consecutiveWins = 0;
                         newTodayStats[player.name].gamesPlayed += 1;
 
-                        // Update lifetime stats
                         if (!newLifetimeStats[player.name]) {
                             newLifetimeStats[player.name] = { wins: 0, losses: 0, gamesPlayed: 0, lastSkillLevel: player.skillLevel };
                         }
@@ -355,9 +340,7 @@ const generatePairings = async () => {
                 generatePairings();
             };
 
-// Loading State and JSX Start
-
-if (loading) {
+            if (loading) {
                 return (
                     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
                         <div className="text-xl text-gray-600">Loading...</div>
@@ -434,9 +417,7 @@ if (loading) {
                                 </div>
                             </div>
 
-// Player list display
-
-<div className="mb-6">
+                            <div className="mb-6">
                                 <div className="flex justify-between items-center mb-3">
                                     <h2 className="text-lg font-semibold text-gray-800">
                                         Today's Players ({players.length})
@@ -511,99 +492,108 @@ if (loading) {
                                 </button>
                             )}
                         </div>
-
-// Statistics Display
-
-{showStats && Object.keys(todayStats).length > 0 && (
+                           {showStats && Object.keys(todayStats).length > 0 && (
                             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                    <Icon type="chart" className="w-6 h-6 text-purple-500" />
-                                    <span>Todays Standings</span>
-                                </h2>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b-2 border-gray-300">
-                                                <th className="text-left py-2 px-3">Player</th>
-                                                <th className="text-center py-2 px-3">Wins</th>
-                                                <th className="text-center py-2 px-3">Losses</th>
-                                                <th className="text-center py-2 px-3">Win Rate</th>
-                                                <th className="text-center py-2 px-3">Streak</th>
-</tr>
-                                    </thead>
-                                    <tbody>
-                                        {Object.entries(todayStats)
-                                            .sort((a, b) => b[1].wins - a[1].wins)
-                                            .map(([player, stats]) => {
-                                                const winRate = stats.gamesPlayed > 0 
-                                                    ? ((stats.wins / stats.gamesPlayed) * 100).toFixed(1) 
-                                                    : '0.0';
-                                                return (
-                                                    <tr key={player} className="border-b border-gray-200">
-                                                        <td className="py-2 px-3 font-medium">{player}</td>
-                                                        <td className="text-center py-2 px-3 text-green-600">{stats.wins}</td>
-                                                        <td className="text-center py-2 px-3 text-red-600">{stats.losses}</td>
-                                                        <td className="text-center py-2 px-3">{winRate}%</td>
-                                                        <td className="text-center py-2 px-3">
-                                                            {stats.consecutiveWins > 0 && (
-                                                                <span className={`px-2 py-1 rounded text-sm ${
-                                                                    stats.consecutiveWins >= 3 ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'
-                                                                }`}>
-                                                                    {stats.consecutiveWins} 🔥
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                    </tbody>
-                                </table>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-4">Today's Standings</h2>
+                                <div className="flex items-center justify-between mb-4 text-xs font-semibold text-gray-500 uppercase px-4">
+                                    <span>Rank Player</span>
+                                    <span>Win Percentage</span>
+                                </div>
+                                <div className="space-y-2">
+                                    {Object.entries(todayStats)
+                                        .sort((a, b) => {
+                                            const winRateA = a[1].gamesPlayed > 0 ? (a[1].wins / a[1].gamesPlayed) : 0;
+                                            const winRateB = b[1].gamesPlayed > 0 ? (b[1].wins / b[1].gamesPlayed) : 0;
+                                            if (winRateB !== winRateA) return winRateB - winRateA;
+                                            return b[1].wins - a[1].wins;
+                                        })
+                                        .map(([player, stats], index) => {
+                                            const winRate = stats.gamesPlayed > 0 
+                                                ? Math.round((stats.wins / stats.gamesPlayed) * 100)
+                                                : 0;
+                                            const rankColors = ['bg-yellow-400', 'bg-gray-300', 'bg-orange-400', 'bg-blue-400', 'bg-purple-400'];
+                                            const rankColor = rankColors[index] || 'bg-gray-200';
+                                            
+                                            return (
+                                                <div key={player} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                                                    <div className="flex items-center gap-3 flex-1">
+                                                        <div className={`w-10 h-10 ${rankColor} rounded-full flex items-center justify-center font-bold text-white text-sm`}>
+                                                            {index + 1}
+                                                        </div>
+                                                        <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
+                                                            <span className="text-xl font-bold text-blue-600">{player.charAt(0).toUpperCase()}</span>
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-gray-900">{player}</div>
+                                                            <div className="text-sm text-gray-500">
+                                                                {stats.wins}-{stats.losses}
+                                                                {stats.consecutiveWins > 0 && (
+                                                                    <span className="ml-2 text-orange-500">• {stats.consecutiveWins} streak 🔥</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {winRate === 100 && <Icon type="trophy" className="w-5 h-5 text-yellow-500" />}
+                                                        <div className="text-2xl font-bold text-gray-900">{winRate}%</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                </div>
                             </div>
-                        </div>
-                    )}
-                    {showLifetimeStats && Object.keys(lifetimeStats).length > 0 && (
-                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                <Icon type="star" className="w-6 h-6 text-yellow-500" />
-                                <span>All-Time Leaderboard</span>
-                            </h2>
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b-2 border-gray-300">
-                                            <th className="text-left py-2 px-3">Player</th>
-                                            <th className="text-center py-2 px-3">Total Wins</th>
-                                            <th className="text-center py-2 px-3">Total Losses</th>
-                                            <th className="text-center py-2 px-3">Games</th>
-                                            <th className="text-center py-2 px-3">Win Rate</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {Object.entries(lifetimeStats)
-                                            .sort((a, b) => b[1].wins - a[1].wins)
-                                            .map(([player, stats]) => {
-                                                const winRate = stats.gamesPlayed > 0 
-                                                    ? ((stats.wins / stats.gamesPlayed) * 100).toFixed(1) 
-                                                    : '0.0';
-                                                return (
-                                                    <tr key={player} className="border-b border-gray-200">
-                                                        <td className="py-2 px-3 font-medium">{player}</td>
-                                                        <td className="text-center py-2 px-3 text-green-600 font-bold">{stats.wins}</td>
-                                                        <td className="text-center py-2 px-3 text-red-600">{stats.losses}</td>
-                                                        <td className="text-center py-2 px-3">{stats.gamesPlayed}</td>
-                                                        <td className="text-center py-2 px-3">{winRate}%</td>
-                                                    </tr>
-                                                );
-                                            })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
+                        )}
 
-### Section 10: Court Display & Final Closing (LAST SECTION)
-```javascript
-                        {pairings && (
+                        {showLifetimeStats && Object.keys(lifetimeStats).length > 0 && (
+                            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-4">All-Time Standings</h2>
+                                <div className="flex items-center justify-between mb-4 text-xs font-semibold text-gray-500 uppercase px-4">
+                                    <span>Rank Player</span>
+                                    <span>Win Percentage</span>
+                                </div>
+                                <div className="space-y-2">
+                                    {Object.entries(lifetimeStats)
+                                        .sort((a, b) => {
+                                            const winRateA = a[1].gamesPlayed > 0 ? (a[1].wins / a[1].gamesPlayed) : 0;
+                                            const winRateB = b[1].gamesPlayed > 0 ? (b[1].wins / b[1].gamesPlayed) : 0;
+                                            if (winRateB !== winRateA) return winRateB - winRateA;
+                                            return b[1].wins - a[1].wins;
+                                        })
+                                        .map(([player, stats], index) => {
+                                            const winRate = stats.gamesPlayed > 0 
+                                                ? Math.round((stats.wins / stats.gamesPlayed) * 100)
+                                                : 0;
+                                            const rankColors = ['bg-yellow-400', 'bg-gray-300', 'bg-orange-400', 'bg-blue-400', 'bg-purple-400'];
+                                            const rankColor = rankColors[index] || 'bg-gray-200';
+                                            
+                                            return (
+                                                <div key={player} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                                                    <div className="flex items-center gap-3 flex-1">
+                                                        <div className={`w-10 h-10 ${rankColor} rounded-full flex items-center justify-center font-bold text-white text-sm`}>
+                                                            {index + 1}
+                                                        </div>
+                                                        <div className="w-12 h-12 bg-green-200 rounded-full flex items-center justify-center">
+                                                            <span className="text-xl font-bold text-green-600">{player.charAt(0).toUpperCase()}</span>
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-gray-900">{player}</div>
+                                                            <div className="text-sm text-gray-500">
+                                                                {stats.wins}-{stats.losses} • {stats.gamesPlayed} games
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {winRate === 100 && <Icon type="trophy" className="w-5 h-5 text-yellow-500" />}
+                                                        <div className="text-2xl font-bold text-gray-900">{winRate}%</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                </div>
+                            </div>
+                        )}
+
+{pairings && (
                             <div className="space-y-4">
                                 {pairings.courts.map((court, index) => (
                                     <div key={index} className="bg-white rounded-lg shadow-lg p-6">
@@ -722,7 +712,8 @@ if (loading) {
                                 </div>
                             </div>
                         )}
-                    </div>
+
+			</div>
                 </div>
             );
         }
@@ -732,4 +723,3 @@ if (loading) {
     </script>
 </body>
 </html>
-
