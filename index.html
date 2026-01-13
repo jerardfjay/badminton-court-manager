@@ -15,7 +15,6 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
         
-        // Simple icon component
         const Icon = ({ type, className = "w-5 h-5" }) => {
             const icons = {
                 users: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
@@ -27,12 +26,26 @@
                 shuffle: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
                 trophy: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>,
                 clock: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-                star: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                star: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>,
+                lock: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             };
             return icons[type] || null;
         };
 
 function BadmintonPairingApp() {
+            // ADMIN & SECURITY CONFIGURATION
+            const APP_ID = 'JFBCM-2025-OHIO-SIX';
+            const AUTHORIZED_DOMAIN = 'https://badminton-court-manager-six.vercel.app';
+            
+            const AUTHORIZED_ADMINS = [
+                { phone: '614-804-6856', name: 'Sudhakar Mdeiatha' },
+                { phone: '614-787-5154', name: 'Jerard Francis' },
+                { phone: '614-400-8841', name: 'IndrapalSingh Varun' },
+                { phone: '614-256-6459', name: 'Suja Eben' },
+                { phone: '501-707-7065', name: 'Eashwar Eashwar' }
+            ];
+
+            // State variables
             const [players, setPlayers] = useState([]);
             const [newPlayerName, setNewPlayerName] = useState('');
             const [pairings, setPairings] = useState(null);
@@ -45,6 +58,22 @@ function BadmintonPairingApp() {
             const [lastResetDate, setLastResetDate] = useState('');
             const [timeUntilReset, setTimeUntilReset] = useState('');
             const [loading, setLoading] = useState(true);
+            
+            // Admin state
+            const [isAdmin, setIsAdmin] = useState(false);
+            const [currentAdmin, setCurrentAdmin] = useState(null);
+            const [showAdminLogin, setShowAdminLogin] = useState(false);
+            const [adminPhone, setAdminPhone] = useState('');
+            const [domainError, setDomainError] = useState(false);
+
+            // Check domain on mount
+            useEffect(() => {
+                const currentDomain = window.location.origin + window.location.pathname.replace(/\/$/, '');
+                const authorizedDomain = AUTHORIZED_DOMAIN.replace(/\/$/, '');
+                if (currentDomain !== authorizedDomain) {
+                    setDomainError(true);
+                }
+            }, []);
 
             // Load data from storage on mount
             useEffect(() => {
@@ -62,13 +91,13 @@ function BadmintonPairingApp() {
                 return () => clearInterval(interval);
             }, [lastResetDate]);
 
-            const loadFromStorage = async () => {
+const loadFromStorage = async () => {
                 try {
-                    const lifetimeData = await window.storage.get('lifetime_stats');
-                    const lastReset = await window.storage.get('last_reset_date');
-                    const todayData = await window.storage.get('today_stats');
-                    const playersData = await window.storage.get('current_players');
-                    const roundData = await window.storage.get('current_round');
+                    const lifetimeData = await window.storage.get('lifetime_stats_' + APP_ID);
+                    const lastReset = await window.storage.get('last_reset_date_' + APP_ID);
+                    const todayData = await window.storage.get('today_stats_' + APP_ID);
+                    const playersData = await window.storage.get('current_players_' + APP_ID);
+                    const roundData = await window.storage.get('current_round_' + APP_ID);
 
                     if (lifetimeData?.value) {
                         setLifetimeStats(JSON.parse(lifetimeData.value));
@@ -99,7 +128,7 @@ function BadmintonPairingApp() {
 
             const saveToStorage = async (key, value) => {
                 try {
-                    await window.storage.set(key, JSON.stringify(value));
+                    await window.storage.set(key + '_' + APP_ID, JSON.stringify(value));
                 } catch (error) {
                     console.error('Error saving to storage:', error);
                 }
@@ -140,6 +169,31 @@ function BadmintonPairingApp() {
                 setTimeUntilReset(`${hours}h ${minutes}m`);
             };
 
+// Admin functions
+            const formatPhoneNumber = (value) => {
+                const numbers = value.replace(/\D/g, '');
+                if (numbers.length <= 3) return numbers;
+                if (numbers.length <= 6) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+                return `${numbers.slice(0, 3)}-${numbers.slice(3, 6)}-${numbers.slice(6, 10)}`;
+            };
+
+            const verifyAdmin = () => {
+                const admin = AUTHORIZED_ADMINS.find(a => a.phone === adminPhone);
+                if (admin) {
+                    setIsAdmin(true);
+                    setCurrentAdmin(admin);
+                    setShowAdminLogin(false);
+                    setAdminPhone('');
+                } else {
+                    alert('Phone number not authorized. Contact an administrator.');
+                }
+            };
+
+            const logoutAdmin = () => {
+                setIsAdmin(false);
+                setCurrentAdmin(null);
+            };
+
             const shareOnWhatsApp = () => {
                 const message = encodeURIComponent("Dear fellow birdies, lets give this app a shot and not make any holes while I try to fix it");
                 const url = encodeURIComponent(window.location.href);
@@ -150,7 +204,6 @@ function BadmintonPairingApp() {
             const addPlayer = async () => {
                 if (newPlayerName.trim() && !players.some(p => p.name === newPlayerName.trim())) {
                     const name = newPlayerName.trim();
-                    
                     const lastSkillLevel = lifetimeStats[name]?.lastSkillLevel || 3;
                     
                     const newPlayer = { name, skillLevel: lastSkillLevel };
@@ -172,6 +225,11 @@ function BadmintonPairingApp() {
             };
 
             const updateSkillLevel = async (playerName, newLevel) => {
+                if (!isAdmin) {
+                    alert('Only admins can change skill levels');
+                    return;
+                }
+                
                 const updatedPlayers = players.map(p => 
                     p.name === playerName ? { ...p, skillLevel: parseInt(newLevel) } : p
                 );
@@ -191,12 +249,22 @@ function BadmintonPairingApp() {
             };
 
             const removePlayer = async (playerName) => {
+                if (!isAdmin) {
+                    alert('Only admins can remove players');
+                    return;
+                }
+                
                 const updatedPlayers = players.filter(p => p.name !== playerName);
                 setPlayers(updatedPlayers);
                 await saveToStorage('current_players', updatedPlayers);
             };
 
             const clearAllPlayers = async () => {
+                if (!isAdmin) {
+                    alert('Only admins can clear all players');
+                    return;
+                }
+                
                 if (window.confirm('Are you sure you want to clear all players for today?')) {
                     setPlayers([]);
                     setPairings(null);
@@ -219,7 +287,12 @@ function BadmintonPairingApp() {
                 return shuffled;
             };
 
-           const generatePairings = async () => {
+const generatePairings = async () => {
+                if (!isAdmin) {
+                    alert('Only admins can generate pairings');
+                    return;
+                }
+                
                 if (players.length < 4) {
                     alert('You need at least 4 players to create pairings for courts!');
                     return;
@@ -285,6 +358,11 @@ function BadmintonPairingApp() {
             };
 
             const submitScores = async () => {
+                if (!isAdmin) {
+                    alert('Only admins can submit scores');
+                    return;
+                }
+                
                 if (!allScoresEntered()) {
                     alert('Please enter scores for all courts before proceeding!');
                     return;
@@ -340,6 +418,26 @@ function BadmintonPairingApp() {
                 generatePairings();
             };
 
+// Domain lock screen
+            if (domainError) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md text-center">
+                            <div className="text-6xl mb-4">🔒</div>
+                            <h1 className="text-2xl font-bold text-red-600 mb-4">Unauthorized Domain</h1>
+                            <p className="text-gray-700 mb-4">
+                                This app is locked to the official domain and cannot be run from this location.
+                            </p>
+                            <p className="text-sm text-gray-500 mb-2">
+                                Official URL:
+                            </p>
+                            <code className="bg-gray-100 px-3 py-2 rounded block text-sm mb-4">{AUTHORIZED_DOMAIN}</code>
+                            <p className="text-xs text-gray-400">App ID: {APP_ID}</p>
+                        </div>
+                    </div>
+                );
+            }
+
             if (loading) {
                 return (
                     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
@@ -348,8 +446,43 @@ function BadmintonPairingApp() {
                 );
             }
 
-            return (
+            // Admin login modal
+            const AdminLoginModal = () => (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-gray-800">Admin Verification</h2>
+                            <button onClick={() => setShowAdminLogin(false)} className="text-gray-500 hover:text-gray-700">
+                                <Icon type="x" className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-4">Enter your authorized phone number to access admin features.</p>
+                        <input
+                            type="tel"
+                            value={adminPhone}
+                            onChange={(e) => setAdminPhone(formatPhoneNumber(e.target.value))}
+                            onKeyPress={(e) => e.key === 'Enter' && verifyAdmin()}
+                            placeholder="614-804-6856"
+                            maxLength="12"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+                        />
+                        <button
+                            onClick={verifyAdmin}
+                            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                        >
+                            Verify Admin Access
+                        </button>
+                        <p className="text-xs text-gray-500 mt-4 text-center">
+                            Only authorized administrators can manage game sessions.
+                        </p>
+                    </div>
+                </div>
+            );
+
+return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-4">
+                    {showAdminLogin && <AdminLoginModal />}
+                    
                     <div className="max-w-4xl mx-auto">
                         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                             <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
@@ -357,7 +490,7 @@ function BadmintonPairingApp() {
                                     <Icon type="users" className="w-8 h-8 text-blue-600" />
                                     <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Jerard Francis Badminton Court Manager</h1>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-wrap">
                                     <button
                                         onClick={shareOnWhatsApp}
                                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
@@ -379,8 +512,46 @@ function BadmintonPairingApp() {
                                         <Icon type="star" />
                                         <span className="hidden sm:inline">All-Time</span>
                                     </button>
+                                    {isAdmin ? (
+                                        <button
+                                            onClick={logoutAdmin}
+                                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
+                                            title={`Logged in as ${currentAdmin?.name}`}
+                                        >
+                                            <Icon type="x" />
+                                            <span className="hidden sm:inline">Logout</span>
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => setShowAdminLogin(true)}
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                                        >
+                                            <Icon type="lock" />
+                                            <span className="hidden sm:inline">Admin</span>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
+
+                            {isAdmin && currentAdmin && (
+                                <div className="mb-4 p-3 bg-green-100 rounded-lg flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                                            <span className="text-white font-bold text-sm">{currentAdmin.name.charAt(0)}</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-semibold text-green-800">Admin Mode Active</p>
+                                            <p className="text-xs text-gray-600">Managed by: {currentAdmin.name}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={logoutAdmin}
+                                        className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                                    >
+                                        Logout
+                                    </button>
+                                </div>
+                            )}
 
                             <div className="mb-4 p-3 bg-gradient-to-r from-blue-100 to-green-100 rounded-lg flex items-center justify-between">
                                 <div>
@@ -422,7 +593,7 @@ function BadmintonPairingApp() {
                                     <h2 className="text-lg font-semibold text-gray-800">
                                         Today's Players ({players.length})
                                     </h2>
-                                    {players.length > 0 && (
+                                    {players.length > 0 && isAdmin && (
                                         <button
                                             onClick={clearAllPlayers}
                                             className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center gap-1"
@@ -451,8 +622,9 @@ function BadmintonPairingApp() {
                                                     <select
                                                         value={player.skillLevel}
                                                         onChange={(e) => updateSkillLevel(player.name, e.target.value)}
-                                                        className="px-2 py-1 text-xs rounded border border-gray-300 bg-white"
-                                                        title="Skill Level"
+                                                        disabled={!isAdmin}
+                                                        className={`px-2 py-1 text-xs rounded border border-gray-300 ${isAdmin ? 'bg-white' : 'bg-gray-100 cursor-not-allowed'}`}
+                                                        title={isAdmin ? "Skill Level" : "Only admins can change skill level"}
                                                     >
                                                         <option value="1">⭐</option>
                                                         <option value="2">⭐⭐</option>
@@ -464,12 +636,14 @@ function BadmintonPairingApp() {
                                                         Today: {today.wins}W/{today.losses}L | All: {lifetime.wins}W/{lifetime.losses}L
                                                     </span>
                                                     {isOnStreak && <Icon type="trophy" className="w-4 h-4" />}
-                                                    <button
-                                                        onClick={() => removePlayer(player.name)}
-                                                        className="hover:bg-blue-200 rounded-full p-1"
-                                                    >
-                                                        <Icon type="x" className="w-4 h-4" />
-                                                    </button>
+                                                    {isAdmin && (
+                                                        <button
+                                                            onClick={() => removePlayer(player.name)}
+                                                            className="hover:bg-blue-200 rounded-full p-1"
+                                                        >
+                                                            <Icon type="x" className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             );
                                         })
@@ -480,19 +654,20 @@ function BadmintonPairingApp() {
                             {!pairings && (
                                 <button
                                     onClick={generatePairings}
-                                    disabled={players.length < 4}
+                                    disabled={players.length < 4 || !isAdmin}
                                     className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                                        players.length >= 4
+                                        players.length >= 4 && isAdmin
                                             ? 'bg-green-600 text-white hover:bg-green-700'
                                             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                     }`}
                                 >
                                     <Icon type="shuffle" />
-                                    <span>Start Game - Generate Pairings</span>
+                                    <span>{isAdmin ? 'Start Game - Generate Pairings' : 'Admin Login Required to Generate Pairings'}</span>
                                 </button>
                             )}
                         </div>
-                           {showStats && Object.keys(todayStats).length > 0 && (
+
+{showStats && Object.keys(todayStats).length > 0 && (
                             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Today's Standings</h2>
                                 <div className="flex items-center justify-between mb-4 text-xs font-semibold text-gray-500 uppercase px-4">
@@ -644,7 +819,8 @@ function BadmintonPairingApp() {
                                                     min="0"
                                                     value={scores[index]?.team1 || ''}
                                                     onChange={(e) => handleScoreChange(index, 'team1', e.target.value)}
-                                                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                    disabled={!isAdmin}
+                                                    className={`w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!isAdmin ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                                                     placeholder="0"
                                                 />
                                             </div>
@@ -655,7 +831,8 @@ function BadmintonPairingApp() {
                                                     min="0"
                                                     value={scores[index]?.team2 || ''}
                                                     onChange={(e) => handleScoreChange(index, 'team2', e.target.value)}
-                                                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                                    disabled={!isAdmin}
+                                                    className={`w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 ${!isAdmin ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                                                     placeholder="0"
                                                 />
                                             </div>
@@ -692,33 +869,35 @@ function BadmintonPairingApp() {
                                 <div className="flex flex-col sm:flex-row gap-4">
                                     <button
                                         onClick={generatePairings}
-                                        className="flex-1 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                                        disabled={!isAdmin}
+                                        className={`flex-1 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                                            isAdmin ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        }`}
                                     >
                                         <Icon type="shuffle" />
-                                        <span>Shuffle Without Scores</span>
+                                        <span>{isAdmin ? 'Shuffle Without Scores' : 'Admin Only'}</span>
                                     </button>
                                     <button
                                         onClick={submitScores}
-                                        disabled={!allScoresEntered()}
+                                        disabled={!allScoresEntered() || !isAdmin}
                                         className={`flex-1 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                                            allScoresEntered()
+                                            allScoresEntered() && isAdmin
                                                 ? 'bg-green-600 text-white hover:bg-green-700'
                                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                         }`}
                                     >
                                         <Icon type="trophy" />
-                                        <span>Submit Scores & Next Round</span>
+                                        <span>{isAdmin ? 'Submit Scores & Next Round' : 'Admin Only'}</span>
                                     </button>
                                 </div>
                             </div>
                         )}
-
-			</div>
+                    </div>
                 </div>
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<BadmintonPairingApp />);
     </script>
 </body>
