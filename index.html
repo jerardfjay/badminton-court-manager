@@ -107,9 +107,12 @@ const loadFromStorage = async () => {
                     const storedDate = lastReset?.value || today;
                     setLastResetDate(storedDate);
 
-                    if (storedDate !== today) {
+					if (storedDate !== today) {
+                        // Only reset daily stats, keep lifetime stats
                         await resetDailySession();
+                        setLastResetDate(today);
                     } else {
+                        // Same day - load everything normally
                         if (todayData?.value) {
                             setTodayStats(JSON.parse(todayData.value));
                         }
@@ -938,3 +941,4 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
     </script>
 </body>
 </html>
+
