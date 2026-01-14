@@ -93,13 +93,20 @@ function BadmintonPairingApp() {
 
 const loadFromStorage = async () => {
                 try {
+                    // Check if storage API is available
+                    if (!window.storage || typeof window.storage.get !== 'function') {
+                        console.log('Storage API not available yet');
+                        setLoading(false);
+                        return;
+                    }
+
                     const lifetimeData = await window.storage.get('lifetime_stats_' + APP_ID);
                     const lastReset = await window.storage.get('last_reset_date_' + APP_ID);
                     const todayData = await window.storage.get('today_stats_' + APP_ID);
                     const playersData = await window.storage.get('current_players_' + APP_ID);
                     const roundData = await window.storage.get('current_round_' + APP_ID);
 
-                    console.log('Loading players data:', playersData); // Debug log
+                    console.log('Loading players data:', playersData);
 
                     if (lifetimeData?.value) {
                         setLifetimeStats(JSON.parse(lifetimeData.value));
@@ -108,21 +115,21 @@ const loadFromStorage = async () => {
                     const today = new Date().toDateString();
                     const storedDate = lastReset?.value || today;
                     
-                    console.log('Today:', today, 'Stored date:', storedDate); // Debug log
+                    console.log('Today:', today, 'Stored date:', storedDate);
                     
                     setLastResetDate(storedDate);
 
                     if (storedDate !== today) {
-                        console.log('Different day - resetting'); // Debug log
+                        console.log('Different day - resetting');
                         await resetDailySession();
                     } else {
-                        console.log('Same day - loading data'); // Debug log
+                        console.log('Same day - loading data');
                         if (todayData?.value) {
                             setTodayStats(JSON.parse(todayData.value));
                         }
                         if (playersData?.value) {
                             const loadedPlayers = JSON.parse(playersData.value);
-                            console.log('Loaded players:', loadedPlayers); // Debug log
+                            console.log('Loaded players:', loadedPlayers);
                             setPlayers(loadedPlayers);
                         }
                         if (roundData?.value) {
@@ -137,7 +144,13 @@ const loadFromStorage = async () => {
 
             const saveToStorage = async (key, value) => {
                 try {
+                    // Check if storage API is available
+                    if (!window.storage || typeof window.storage.set !== 'function') {
+                        console.warn('Storage API not available, data will not persist');
+                        return;
+                    }
                     await window.storage.set(key + '_' + APP_ID, JSON.stringify(value));
+                    console.log('Saved to storage:', key, value);
                 } catch (error) {
                     console.error('Error saving to storage:', error);
                 }
@@ -949,6 +962,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
     </script>
 </body>
 </html>
+
 
 
 
