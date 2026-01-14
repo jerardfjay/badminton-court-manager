@@ -91,7 +91,7 @@ function BadmintonPairingApp() {
                 return () => clearInterval(interval);
             }, [lastResetDate]);
 
-			const loadFromStorage = async () => {
+const loadFromStorage = async () => {
                 try {
                     const lifetimeData = await window.storage.get('lifetime_stats_' + APP_ID);
                     const lastReset = await window.storage.get('last_reset_date_' + APP_ID);
@@ -99,31 +99,38 @@ function BadmintonPairingApp() {
                     const playersData = await window.storage.get('current_players_' + APP_ID);
                     const roundData = await window.storage.get('current_round_' + APP_ID);
 
+                    console.log('Loading players data:', playersData); // Debug log
+
                     if (lifetimeData?.value) {
                         setLifetimeStats(JSON.parse(lifetimeData.value));
                     }
 
                     const today = new Date().toDateString();
-                    const storedDate = lastReset?.value ? JSON.parse(lastReset.value) : today;
+                    const storedDate = lastReset?.value || today;
+                    
+                    console.log('Today:', today, 'Stored date:', storedDate); // Debug log
+                    
                     setLastResetDate(storedDate);
 
                     if (storedDate !== today) {
-                        // New day - reset daily session
+                        console.log('Different day - resetting'); // Debug log
                         await resetDailySession();
                     } else {
-                        // Same day - restore session
+                        console.log('Same day - loading data'); // Debug log
                         if (todayData?.value) {
                             setTodayStats(JSON.parse(todayData.value));
                         }
                         if (playersData?.value) {
-                            setPlayers(JSON.parse(playersData.value));
+                            const loadedPlayers = JSON.parse(playersData.value);
+                            console.log('Loaded players:', loadedPlayers); // Debug log
+                            setPlayers(loadedPlayers);
                         }
                         if (roundData?.value) {
                             setRoundNumber(parseInt(roundData.value));
                         }
                     }
                 } catch (error) {
-                    console.log('No existing data, starting fresh');
+                    console.error('Error loading from storage:', error);
                 }
                 setLoading(false);
             };
@@ -202,7 +209,7 @@ function BadmintonPairingApp() {
                 window.open(whatsappUrl, '_blank');
             };
 
-            const addPlayer = async () => {
+const addPlayer = async () => {
                 if (newPlayerName.trim() && !players.some(p => p.name === newPlayerName.trim())) {
                     const name = newPlayerName.trim();
                     const lastSkillLevel = lifetimeStats[name]?.lastSkillLevel || 3;
@@ -220,7 +227,9 @@ function BadmintonPairingApp() {
                         await saveToStorage('today_stats', updatedTodayStats);
                     }
                     
+                    // CRITICAL: Save players immediately
                     await saveToStorage('current_players', updatedPlayers);
+                    console.log('Saved players:', updatedPlayers); // Debug log
                     setNewPlayerName('');
                 }
             };
@@ -940,5 +949,6 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
     </script>
 </body>
 </html>
+
 
 
