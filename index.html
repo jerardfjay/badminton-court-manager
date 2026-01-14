@@ -91,7 +91,7 @@ function BadmintonPairingApp() {
                 return () => clearInterval(interval);
             }, [lastResetDate]);
 
-const loadFromStorage = async () => {
+			const loadFromStorage = async () => {
                 try {
                     const lifetimeData = await window.storage.get('lifetime_stats_' + APP_ID);
                     const lastReset = await window.storage.get('last_reset_date_' + APP_ID);
@@ -104,15 +104,14 @@ const loadFromStorage = async () => {
                     }
 
                     const today = new Date().toDateString();
-                    const storedDate = lastReset?.value || today;
+                    const storedDate = lastReset?.value ? JSON.parse(lastReset.value) : today;
                     setLastResetDate(storedDate);
 
-					if (storedDate !== today) {
-                        // Only reset daily stats, keep lifetime stats
+                    if (storedDate !== today) {
+                        // New day - reset daily session
                         await resetDailySession();
-                        setLastResetDate(today);
                     } else {
-                        // Same day - load everything normally
+                        // Same day - restore session
                         if (todayData?.value) {
                             setTodayStats(JSON.parse(todayData.value));
                         }
@@ -144,7 +143,7 @@ const loadFromStorage = async () => {
                 }
             };
 
-            const resetDailySession = async () => {
+			const resetDailySession = async () => {
                 const today = new Date().toDateString();
                 setPlayers([]);
                 setPairings(null);
@@ -941,4 +940,5 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
     </script>
 </body>
 </html>
+
 
