@@ -91,29 +91,22 @@ function BadmintonPairingApp() {
                 return () => clearInterval(interval);
             }, [lastResetDate]);
 
-const loadFromStorage = async () => {
+const loadFromStorage = () => {
                 try {
-                    // Check if storage API is available
-                    if (!window.storage || typeof window.storage.get !== 'function') {
-                        console.log('Storage API not available yet');
-                        setLoading(false);
-                        return;
-                    }
-
-                    const lifetimeData = await window.storage.get('lifetime_stats_' + APP_ID);
-                    const lastReset = await window.storage.get('last_reset_date_' + APP_ID);
-                    const todayData = await window.storage.get('today_stats_' + APP_ID);
-                    const playersData = await window.storage.get('current_players_' + APP_ID);
-                    const roundData = await window.storage.get('current_round_' + APP_ID);
+                    const lifetimeData = localStorage.getItem('lifetime_stats_' + APP_ID);
+                    const lastReset = localStorage.getItem('last_reset_date_' + APP_ID);
+                    const todayData = localStorage.getItem('today_stats_' + APP_ID);
+                    const playersData = localStorage.getItem('current_players_' + APP_ID);
+                    const roundData = localStorage.getItem('current_round_' + APP_ID);
 
                     console.log('Loading players data:', playersData);
 
-                    if (lifetimeData?.value) {
-                        setLifetimeStats(JSON.parse(lifetimeData.value));
+                    if (lifetimeData) {
+                        setLifetimeStats(JSON.parse(lifetimeData));
                     }
 
                     const today = new Date().toDateString();
-                    const storedDate = lastReset?.value || today;
+                    const storedDate = lastReset || today;
                     
                     console.log('Today:', today, 'Stored date:', storedDate);
                     
@@ -121,19 +114,19 @@ const loadFromStorage = async () => {
 
                     if (storedDate !== today) {
                         console.log('Different day - resetting');
-                        await resetDailySession();
+                        resetDailySession();
                     } else {
                         console.log('Same day - loading data');
-                        if (todayData?.value) {
-                            setTodayStats(JSON.parse(todayData.value));
+                        if (todayData) {
+                            setTodayStats(JSON.parse(todayData));
                         }
-                        if (playersData?.value) {
-                            const loadedPlayers = JSON.parse(playersData.value);
+                        if (playersData) {
+                            const loadedPlayers = JSON.parse(playersData);
                             console.log('Loaded players:', loadedPlayers);
                             setPlayers(loadedPlayers);
                         }
-                        if (roundData?.value) {
-                            setRoundNumber(parseInt(roundData.value));
+                        if (roundData) {
+                            setRoundNumber(parseInt(roundData));
                         }
                     }
                 } catch (error) {
@@ -142,17 +135,12 @@ const loadFromStorage = async () => {
                 setLoading(false);
             };
 
-            const saveToStorage = async (key, value) => {
+          const saveToStorage = (key, value) => {
                 try {
-                    // Check if storage API is available
-                    if (!window.storage || typeof window.storage.set !== 'function') {
-                        console.warn('Storage API not available, data will not persist');
-                        return;
-                    }
-                    await window.storage.set(key + '_' + APP_ID, JSON.stringify(value));
-                    console.log('Saved to storage:', key, value);
+                    localStorage.setItem(key + '_' + APP_ID, JSON.stringify(value));
+                    console.log('Saved to localStorage:', key, value);
                 } catch (error) {
-                    console.error('Error saving to storage:', error);
+                    console.error('Error saving to localStorage:', error);
                 }
             };
 
@@ -163,7 +151,7 @@ const loadFromStorage = async () => {
                 }
             };
 
-			const resetDailySession = async () => {
+           const resetDailySession = () => {
                 const today = new Date().toDateString();
                 setPlayers([]);
                 setPairings(null);
@@ -172,10 +160,10 @@ const loadFromStorage = async () => {
                 setRoundNumber(0);
                 setLastResetDate(today);
                 
-                await saveToStorage('last_reset_date', today);
-                await saveToStorage('today_stats', {});
-                await saveToStorage('current_players', []);
-                await saveToStorage('current_round', 0);
+                saveToStorage('last_reset_date', today);
+                saveToStorage('today_stats', {});
+                saveToStorage('current_players', []);
+                saveToStorage('current_round', 0);
             };
 
             const updateTimeUntilReset = () => {
@@ -222,7 +210,7 @@ const loadFromStorage = async () => {
                 window.open(whatsappUrl, '_blank');
             };
 
-const addPlayer = async () => {
+            const addPlayer = () => {
                 if (newPlayerName.trim() && !players.some(p => p.name === newPlayerName.trim())) {
                     const name = newPlayerName.trim();
                     const lastSkillLevel = lifetimeStats[name]?.lastSkillLevel || 3;
@@ -237,17 +225,16 @@ const addPlayer = async () => {
                             [name]: { wins: 0, losses: 0, consecutiveWins: 0, gamesPlayed: 0 }
                         };
                         setTodayStats(updatedTodayStats);
-                        await saveToStorage('today_stats', updatedTodayStats);
+                        saveToStorage('today_stats', updatedTodayStats);
                     }
                     
-                    // CRITICAL: Save players immediately
-                    await saveToStorage('current_players', updatedPlayers);
-                    console.log('Saved players:', updatedPlayers); // Debug log
+                    saveToStorage('current_players', updatedPlayers);
+                    console.log('Saved players:', updatedPlayers);
                     setNewPlayerName('');
                 }
             };
 
-            const updateSkillLevel = async (playerName, newLevel) => {
+const updateSkillLevel = (playerName, newLevel) => {
                 if (!isAdmin) {
                     alert('Only admins can change skill levels');
                     return;
@@ -267,11 +254,11 @@ const addPlayer = async () => {
                 };
                 setLifetimeStats(updatedLifetime);
                 
-                await saveToStorage('current_players', updatedPlayers);
-                await saveToStorage('lifetime_stats', updatedLifetime);
+                saveToStorage('current_players', updatedPlayers);
+                saveToStorage('lifetime_stats', updatedLifetime);
             };
 
-            const removePlayer = async (playerName) => {
+            const removePlayer = (playerName) => {
                 if (!isAdmin) {
                     alert('Only admins can remove players');
                     return;
@@ -279,10 +266,10 @@ const addPlayer = async () => {
                 
                 const updatedPlayers = players.filter(p => p.name !== playerName);
                 setPlayers(updatedPlayers);
-                await saveToStorage('current_players', updatedPlayers);
+                saveToStorage('current_players', updatedPlayers);
             };
 
-            const clearAllPlayers = async () => {
+const clearAllPlayers = () => {
                 if (!isAdmin) {
                     alert('Only admins can clear all players');
                     return;
@@ -295,9 +282,9 @@ const addPlayer = async () => {
                     setScores({});
                     setRoundNumber(0);
                     
-                    await saveToStorage('current_players', []);
-                    await saveToStorage('today_stats', {});
-                    await saveToStorage('current_round', 0);
+                    saveToStorage('current_players', []);
+                    saveToStorage('today_stats', {});
+                    saveToStorage('current_round', 0);
                 }
             };
 
@@ -357,7 +344,7 @@ const generatePairings = async () => {
                 setScores({});
                 const newRound = roundNumber + 1;
                 setRoundNumber(newRound);
-                await saveToStorage('current_round', newRound);
+                saveToStorage('current_round', newRound);
             };
 
             const handleScoreChange = (courtIndex, team, value) => {
@@ -435,8 +422,8 @@ const generatePairings = async () => {
                 setTodayStats(newTodayStats);
                 setLifetimeStats(newLifetimeStats);
                 
-                await saveToStorage('today_stats', newTodayStats);
-                await saveToStorage('lifetime_stats', newLifetimeStats);
+                saveToStorage('today_stats', newTodayStats);
+                saveToStorage('lifetime_stats', newLifetimeStats);
                 
                 generatePairings();
             };
@@ -962,6 +949,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
     </script>
 </body>
 </html>
+
 
 
 
