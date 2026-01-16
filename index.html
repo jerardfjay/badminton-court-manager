@@ -302,60 +302,7 @@ const addPlayer = async () => {
                 }
             };
 
-const generatePairings = async () => {
-                if (!isAdmin) {
-                    alert('Only admins can generate pairings');
-                    return;
-                }
-                
-                if (players.length < 4) {
-                    alert('You need at least 4 players to create pairings for courts!');
-                    return;
-                }
-
-                const waitingPlayers = [];
-                const regularPlayers = [];
-                const hotStreakPlayers = [];
-
-                players.forEach(player => {
-                    const stats = todayStats[player.name] || { consecutiveWins: 0 };
-                    if (pairings && pairings.remaining && pairings.remaining.some(p => p.name === player.name)) {
-                        waitingPlayers.push(player);
-                    } else if (stats.consecutiveWins >= 3) {
-                        hotStreakPlayers.push(player);
-                    } else {
-                        regularPlayers.push(player);
-                    }
-                });
-
-                const prioritizedPlayers = [...shuffleArray(waitingPlayers), ...shuffleArray(regularPlayers), ...shuffleArray(hotStreakPlayers)];
-
-                const courts = [];
-                const numCourts = Math.min(3, Math.floor(prioritizedPlayers.length / 4));
-                
-                for (let i = 0; i < numCourts; i++) {
-                    const courtPlayers = prioritizedPlayers.slice(i * 4, i * 4 + 4);
-                    courtPlayers.sort((a, b) => b.skillLevel - a.skillLevel);
-                    
-                    const team1 = [courtPlayers[0], courtPlayers[3]];
-                    const team2 = [courtPlayers[1], courtPlayers[2]];
-                    
-                    courts.push({ team1, team2 });
-                }
-
-                const remaining = prioritizedPlayers.slice(courts.length * 4);
-                
-                const newPairings = { courts, remaining };
-                setPairings(newPairings);
-                setScores({});
-                
-                const newRound = roundNumber + 1;
-                await saveToFirebase({
-                    roundNumber: newRound,
-                    pairings: newPairings
-                });
-            };
-
+	
             const handleScoreChange = (courtIndex, team, value) => {
                 setScores(prev => ({
                     ...prev,
@@ -376,7 +323,7 @@ const generatePairings = async () => {
                 return true;
             };
 
-const submitScores = async () => {
+	const submitScores = async () => {
                 if (!isAdmin) {
                     alert('Only admins can submit scores');
                     return;
@@ -779,27 +726,7 @@ return (
                                 {pairings.courts.map((court, courtIndex) => (
                                     <div key={courtIndex} className="mb-6 p-4 border-2 border-gray-300 rounded-lg bg-gradient-to-br from-green-50 to-blue-50">
                                         <h3 className="text-xl font-semibold text-gray-800 mb-3">Court {courtIndex + 1}</h3>
-                                        
-                                        <div className="grid md:grid-cols-2 gap-4 mb-4">
-                                            <div className="p-3 bg-blue-100 rounded-lg">
-                                                <p className="font-semibold text-blue-800 mb-2">Team 1</p>
-                                                {court.team1.map((player, i) => (
-                                                    <p key={i} className="text-gray-700">
-                                                        {player.name} {'⭐'.repeat(player.skillLevel)}
-                                                    </p>
-                                                ))}
-                                            </div>
-                                            
-                                            <div className="p-3 bg-red-100 rounded-lg">
-                                                <p className="font-semibold text-red-800 mb-2">Team 2</p>
-                                                {court.team2.map((player, i) => (
-                                                    <p key={i} className="text-gray-700">
-                                                        {player.name} {'⭐'.repeat(player.skillLevel)}
-                                                    </p>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        
+        	
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Team 1 Score</label>
@@ -865,4 +792,4 @@ return (
         ReactDOM.render(<BadmintonPairingApp />, document.getElementById('root'));
     </script>
 </body>
-</html>
+</html>pairings.remaining.length
