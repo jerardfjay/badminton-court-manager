@@ -8,18 +8,14 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div id="root"></div>
-    
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect } = React;
         
-        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyA-fjweFM94iM2m3JEYfU82XyTpW-XbBoY",
             authDomain: "badminton-court-manager-9ec1e.firebaseapp.com",
@@ -29,12 +25,10 @@
             appId: "1:976498311590:web:1e4d95b58a989878aa0f67"
         };
         
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-const Icon = ({ type, className = "w-5 h-5" }) => {
+
+        const Icon = ({ type, className = "w-5 h-5" }) => {
             const icons = {
                 users: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
                 share: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>,
@@ -50,11 +44,10 @@ const Icon = ({ type, className = "w-5 h-5" }) => {
             };
             return icons[type] || null;
         };
-function BadmintonPairingApp() {
-            // ADMIN & SECURITY CONFIGURATION
+
+        function BadmintonPairingApp() {
             const APP_ID = 'JFBCM-2025-OHIO-SIX';
             const AUTHORIZED_DOMAIN = 'https://badminton-court-manager-six.vercel.app';
-            
             const AUTHORIZED_ADMINS = [
                 { phone: '614-804-6856', name: 'Sudhakar Mdeiatha' },
                 { phone: '614-787-5154', name: 'Jerard Francis' },
@@ -63,16 +56,10 @@ function BadmintonPairingApp() {
                 { phone: '501-707-7065', name: 'Eashwar Eashwar' }
             ];
 
-            // Get today's session ID (format: 2025-01-15)
-            const getSessionId = () => {
-                const today = new Date();
-                return today.toISOString().split('T')[0];
-            };
-
+            const getSessionId = () => new Date().toISOString().split('T')[0];
             const sessionId = getSessionId();
             const sessionRef = db.collection('sessions').doc(sessionId);
 
-            // State variables
             const [players, setPlayers] = useState([]);
             const [newPlayerName, setNewPlayerName] = useState('');
             const [pairings, setPairings] = useState(null);
@@ -84,104 +71,66 @@ function BadmintonPairingApp() {
             const [showLifetimeStats, setShowLifetimeStats] = useState(false);
             const [timeUntilReset, setTimeUntilReset] = useState('');
             const [loading, setLoading] = useState(true);
-            
-            // Admin state
             const [isAdmin, setIsAdmin] = useState(false);
             const [currentAdmin, setCurrentAdmin] = useState(null);
             const [showAdminLogin, setShowAdminLogin] = useState(false);
             const [domainError, setDomainError] = useState(false);
 
-            // Check domain on mount
             useEffect(() => {
                 const currentDomain = window.location.origin + window.location.pathname.replace(/\/$/, '');
                 const authorizedDomain = AUTHORIZED_DOMAIN.replace(/\/$/, '');
-                if (currentDomain !== authorizedDomain) {
-                    setDomainError(true);
-                }
+                if (currentDomain !== authorizedDomain) setDomainError(true);
             }, []);
 
-// Listen to Firebase session data in real-time
             useEffect(() => {
                 if (domainError) return;
-
                 const unsubscribe = sessionRef.onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
-                        console.log('Firebase data updated:', data);
-                        
-                        if (data.players) {
-                            setPlayers(data.players);
-                        }
-                        if (data.todayStats) {
-                            setTodayStats(data.todayStats);
-                        }
-                        if (data.roundNumber !== undefined) {
-                            setRoundNumber(data.roundNumber);
-                        }
-                    } else {
-                        console.log('No session data, starting fresh');
+                        if (data.players) setPlayers(data.players);
+                        if (data.todayStats) setTodayStats(data.todayStats);
+                        if (data.roundNumber !== undefined) setRoundNumber(data.roundNumber);
                     }
                     setLoading(false);
-                }, (error) => {
-                    console.error('Error loading session:', error);
-                    setLoading(false);
-                });
-
+                }, (error) => { console.error('Error:', error); setLoading(false); });
                 return () => unsubscribe();
             }, [sessionId, domainError]);
 
-            // Load lifetime stats from localStorage (not shared)
             useEffect(() => {
                 try {
-                    const lifetimeData = localStorage.getItem('lifetime_stats_' + APP_ID);
-                    if (lifetimeData) {
-                        setLifetimeStats(JSON.parse(lifetimeData));
-                    }
-                } catch (error) {
-                    console.error('Error loading lifetime stats:', error);
-                }
+                    const data = localStorage.getItem('lifetime_stats_' + APP_ID);
+                    if (data) setLifetimeStats(JSON.parse(data));
+                } catch (error) { console.error('Error:', error); }
             }, []);
 
-            // Update countdown timer
             useEffect(() => {
                 const updateTimer = () => {
                     const now = new Date();
                     const tomorrow = new Date(now);
                     tomorrow.setDate(tomorrow.getDate() + 1);
                     tomorrow.setHours(0, 0, 0, 0);
-                    
                     const diff = tomorrow - now;
                     const hours = Math.floor(diff / (1000 * 60 * 60));
                     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    
                     setTimeUntilReset(`${hours}h ${minutes}m`);
                 };
-
                 updateTimer();
                 const interval = setInterval(updateTimer, 60000);
                 return () => clearInterval(interval);
             }, []);
 
-// Save to Firebase (shared across all users)
             const saveToFirebase = async (updates) => {
                 try {
                     await sessionRef.set(updates, { merge: true });
-                    console.log('Saved to Firebase:', updates);
-                } catch (error) {
-                    console.error('Error saving to Firebase:', error);
-                }
+                } catch (error) { console.error('Error:', error); }
             };
 
-            // Save lifetime stats to localStorage (per device)
             const saveLifetimeStats = (stats) => {
                 try {
                     localStorage.setItem('lifetime_stats_' + APP_ID, JSON.stringify(stats));
-                } catch (error) {
-                    console.error('Error saving lifetime stats:', error);
-                }
+                } catch (error) { console.error('Error:', error); }
             };
 
-            // Admin functions
             const formatPhoneNumber = (value) => {
                 const numbers = value.replace(/\D/g, '');
                 if (numbers.length <= 3) return numbers;
@@ -196,10 +145,9 @@ function BadmintonPairingApp() {
                     setCurrentAdmin(admin);
                     setShowAdminLogin(false);
                     return true;
-                } else {
-                    alert('Phone number not authorized. Contact an administrator.');
-                    return false;
                 }
+                alert('Phone number not authorized.');
+                return false;
             };
 
             const logoutAdmin = () => {
@@ -207,13 +155,21 @@ function BadmintonPairingApp() {
                 setCurrentAdmin(null);
             };
 
-	
-	
+            const generateAdminPassword = () => {
+                if (!isAdmin) { alert('Only admins can generate passwords'); return; }
+                const names = ['Viktor', 'Akane', 'Anders', 'Pusarla', 'Momota', 'Sindhu', 'Axelsen', 'Ginting', 'Marin', 'Ratchanok', 'Chou', 'Nozomi', 'Lakshya', 'Kodai', 'Chen', 'Tai'];
+                const validNames = names.filter(n => n.length >= 5 && n.length <= 10);
+                const password = `${validNames[Math.floor(Math.random() * validNames.length)]}${Math.floor(1000 + Math.random() * 9000)}`;
+                const subject = encodeURIComponent('New Badminton Manager Admin Password');
+                const body = encodeURIComponent(`Password: ${password}\n\nGenerated: ${new Date().toLocaleString()}\n\nApp ID: JFBCM-2025-OHIO-SIX`);
+                window.location.href = `mailto:jerardfjay@gmail.com?subject=${subject}&body=${body}`;
+                alert(`Password Generated: ${password}\n\nEmail client will open.`);
+            };
+
             const shareOnWhatsApp = () => {
-                const message = encodeURIComponent("Dear fellow birdies, lets give this app a shot and not make any holes while I try to fix it");
+                const message = encodeURIComponent("Dear fellow birdies, lets give this app a shot!");
                 const url = encodeURIComponent(window.location.href);
-                const whatsappUrl = `https://wa.me/?text=${message}%0A%0A${url}`;
-                window.open(whatsappUrl, '_blank');
+                window.open(`https://wa.me/?text=${message}%0A%0A${url}`, '_blank');
             };
 
             const shuffleArray = (array) => {
@@ -225,41 +181,24 @@ function BadmintonPairingApp() {
                 return shuffled;
             };
 
-const addPlayer = async () => {
+            const addPlayer = async () => {
                 if (newPlayerName.trim() && !players.some(p => p.name === newPlayerName.trim())) {
                     const name = newPlayerName.trim();
                     const lastSkillLevel = lifetimeStats[name]?.lastSkillLevel || 3;
-                    
                     const newPlayer = { name, skillLevel: lastSkillLevel };
                     const updatedPlayers = [...players, newPlayer];
-                    
-                    // Initialize today's stats if new player
                     const updatedTodayStats = { ...todayStats };
                     if (!updatedTodayStats[name]) {
                         updatedTodayStats[name] = { wins: 0, losses: 0, consecutiveWins: 0, gamesPlayed: 0 };
                     }
-                    
-                    // Save to Firebase (shared)
-                    await saveToFirebase({
-                        players: updatedPlayers,
-                        todayStats: updatedTodayStats
-                    });
-                    
+                    await saveToFirebase({ players: updatedPlayers, todayStats: updatedTodayStats });
                     setNewPlayerName('');
                 }
             };
 
             const updateSkillLevel = async (playerName, newLevel) => {
-                if (!isAdmin) {
-                    alert('Only admins can change skill levels');
-                    return;
-                }
-                
-                const updatedPlayers = players.map(p => 
-                    p.name === playerName ? { ...p, skillLevel: parseInt(newLevel) } : p
-                );
-                
-                // Update lifetime stats locally
+                if (!isAdmin) { alert('Only admins can change skill levels'); return; }
+                const updatedPlayers = players.map(p => p.name === playerName ? { ...p, skillLevel: parseInt(newLevel) } : p);
                 const updatedLifetime = {
                     ...lifetimeStats,
                     [playerName]: {
@@ -269,70 +208,103 @@ const addPlayer = async () => {
                 };
                 setLifetimeStats(updatedLifetime);
                 saveLifetimeStats(updatedLifetime);
-                
-                // Save to Firebase (shared)
                 await saveToFirebase({ players: updatedPlayers });
             };
 
             const removePlayer = async (playerName) => {
-                if (!isAdmin) {
-                    alert('Only admins can remove players');
-                    return;
-                }
-                
-                const updatedPlayers = players.filter(p => p.name !== playerName);
-                await saveToFirebase({ players: updatedPlayers });
+                if (!isAdmin) { alert('Only admins can remove players'); return; }
+                await saveToFirebase({ players: players.filter(p => p.name !== playerName) });
             };
 
             const clearAllPlayers = async () => {
-                if (!isAdmin) {
-                    alert('Only admins can clear all players');
-                    return;
-                }
-                
-                if (window.confirm('Are you sure you want to clear all players for today?')) {
-                    await saveToFirebase({
-                        players: [],
-                        todayStats: {},
-                        roundNumber: 0,
-                        pairings: null
-                    });
+                if (!isAdmin) { alert('Only admins can clear all players'); return; }
+                if (window.confirm('Clear all players?')) {
+                    await saveToFirebase({ players: [], todayStats: {}, roundNumber: 0, pairings: null });
                     setPairings(null);
                     setScores({});
                 }
             };
 
-	
-            const handleScoreChange = (courtIndex, team, value) => {
-                setScores(prev => ({
-                    ...prev,
-                    [courtIndex]: {
-                        ...prev[courtIndex],
-                        [team]: value
+// COPY EVERYTHING ABOVE THIS LINE AS PART 1
+// CONTINUE TO PART 2...
+
+// PART 2 - APPEND THIS AFTER PART 1
+
+            const generatePairings = async () => {
+                if (!isAdmin) { alert('Only admins can generate pairings'); return; }
+                if (players.length < 4) { alert('Need at least 4 players!'); return; }
+
+                const playersWithDynamicRating = players.map(player => {
+                    const stats = todayStats[player.name] || { wins: 0, losses: 0, consecutiveWins: 0, gamesPlayed: 0 };
+                    let dynamicRating = player.skillLevel;
+                    if (stats.gamesPlayed > 0) {
+                        dynamicRating = player.skillLevel + stats.wins - stats.losses;
+                        dynamicRating = Math.max(1, Math.min(5, dynamicRating));
                     }
-                }));
+                    return { ...player, dynamicRating, consecutiveWins: stats.consecutiveWins };
+                });
+
+                const restingPlayers = [];
+                const availablePlayers = [];
+                playersWithDynamicRating.forEach(player => {
+                    if (player.consecutiveWins >= 3) restingPlayers.push(player);
+                    else availablePlayers.push(player);
+                });
+
+                if (availablePlayers.length < 4) {
+                    alert(`Not enough players!\nAvailable: ${availablePlayers.length}\nResting: ${restingPlayers.length}`);
+                    return;
+                }
+
+                const ratingGroups = { 5: [], 4: [], 3: [], 2: [], 1: [] };
+                availablePlayers.forEach(player => ratingGroups[player.dynamicRating].push(player));
+                Object.keys(ratingGroups).forEach(rating => {
+                    ratingGroups[rating] = shuffleArray(ratingGroups[rating]);
+                });
+
+                const sortedForPairing = [];
+                for (let rating = 5; rating >= 1; rating--) sortedForPairing.push(...ratingGroups[rating]);
+
+                const courts = [];
+                const numCourts = Math.min(3, Math.floor(sortedForPairing.length / 4));
+                for (let courtNum = 0; courtNum < numCourts; courtNum++) {
+                    const courtPlayers = sortedForPairing.slice(courtNum * 4, courtNum * 4 + 4);
+                    if (courtPlayers.length === 4) {
+                        courtPlayers.sort((a, b) => b.dynamicRating - a.dynamicRating);
+                        courts.push({
+                            team1: [courtPlayers[0], courtPlayers[3]],
+                            team2: [courtPlayers[1], courtPlayers[2]],
+                            courtNumber: courtNum + 1
+                        });
+                    }
+                }
+
+                const newPairings = {
+                    courts,
+                    remaining: sortedForPairing.slice(courts.length * 4),
+                    resting: restingPlayers
+                };
+                setPairings(newPairings);
+                setScores({});
+                const newRound = roundNumber + 1;
+                await saveToFirebase({ roundNumber: newRound, pairings: newPairings });
+            };
+
+            const handleScoreChange = (courtIndex, team, value) => {
+                setScores(prev => ({ ...prev, [courtIndex]: { ...prev[courtIndex], [team]: value } }));
             };
 
             const allScoresEntered = () => {
                 if (!pairings) return false;
                 for (let i = 0; i < pairings.courts.length; i++) {
-                    if (!scores[i] || scores[i].team1 === undefined || scores[i].team2 === undefined) {
-                        return false;
-                    }
+                    if (!scores[i] || scores[i].team1 === undefined || scores[i].team2 === undefined) return false;
                 }
                 return true;
             };
 
-	const submitScores = async () => {
-                if (!isAdmin) {
-                    alert('Only admins can submit scores');
-                    return;
-                }
-                
-                if (!allScoresEntered()) {
-                    alert('Please enter scores for all courts before proceeding!');
-                    return;
-                }
+            const submitScores = async () => {
+                if (!isAdmin) { alert('Only admins can submit scores'); return; }
+                if (!allScoresEntered()) { alert('Enter all scores!'); return; }
 
                 const newTodayStats = { ...todayStats };
                 const newLifetimeStats = { ...lifetimeStats };
@@ -340,67 +312,44 @@ const addPlayer = async () => {
                 pairings.courts.forEach((court, courtIndex) => {
                     const score1 = parseInt(scores[courtIndex].team1);
                     const score2 = parseInt(scores[courtIndex].team2);
-
                     const winners = score1 > score2 ? court.team1 : court.team2;
                     const losers = score1 > score2 ? court.team2 : court.team1;
 
                     winners.forEach(player => {
-                        if (!newTodayStats[player.name]) {
-                            newTodayStats[player.name] = { wins: 0, losses: 0, consecutiveWins: 0, gamesPlayed: 0 };
-                        }
+                        if (!newTodayStats[player.name]) newTodayStats[player.name] = { wins: 0, losses: 0, consecutiveWins: 0, gamesPlayed: 0 };
                         newTodayStats[player.name].wins += 1;
                         newTodayStats[player.name].consecutiveWins += 1;
                         newTodayStats[player.name].gamesPlayed += 1;
-
-                        if (!newLifetimeStats[player.name]) {
-                            newLifetimeStats[player.name] = { wins: 0, losses: 0, gamesPlayed: 0, lastSkillLevel: player.skillLevel };
-                        }
+                        if (!newLifetimeStats[player.name]) newLifetimeStats[player.name] = { wins: 0, losses: 0, gamesPlayed: 0, lastSkillLevel: player.skillLevel };
                         newLifetimeStats[player.name].wins += 1;
                         newLifetimeStats[player.name].gamesPlayed += 1;
                     });
 
                     losers.forEach(player => {
-                        if (!newTodayStats[player.name]) {
-                            newTodayStats[player.name] = { wins: 0, losses: 0, consecutiveWins: 0, gamesPlayed: 0 };
-                        }
+                        if (!newTodayStats[player.name]) newTodayStats[player.name] = { wins: 0, losses: 0, consecutiveWins: 0, gamesPlayed: 0 };
                         newTodayStats[player.name].losses += 1;
                         newTodayStats[player.name].consecutiveWins = 0;
                         newTodayStats[player.name].gamesPlayed += 1;
-
-                        if (!newLifetimeStats[player.name]) {
-                            newLifetimeStats[player.name] = { wins: 0, losses: 0, gamesPlayed: 0, lastSkillLevel: player.skillLevel };
-                        }
+                        if (!newLifetimeStats[player.name]) newLifetimeStats[player.name] = { wins: 0, losses: 0, gamesPlayed: 0, lastSkillLevel: player.skillLevel };
                         newLifetimeStats[player.name].losses += 1;
                         newLifetimeStats[player.name].gamesPlayed += 1;
                     });
                 });
 
-                // Save to Firebase (shared)
                 await saveToFirebase({ todayStats: newTodayStats });
-                
-                // Save lifetime stats locally
                 setLifetimeStats(newLifetimeStats);
                 saveLifetimeStats(newLifetimeStats);
-                
-                // Generate next round
                 generatePairings();
             };
 
-// Domain lock screen
             if (domainError) {
                 return (
                     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
                         <div className="bg-white rounded-lg shadow-xl p-8 max-w-md text-center">
                             <div className="text-6xl mb-4">🔒</div>
                             <h1 className="text-2xl font-bold text-red-600 mb-4">Unauthorized Domain</h1>
-                            <p className="text-gray-700 mb-4">
-                                This app is locked to the official domain and cannot be run from this location.
-                            </p>
-                            <p className="text-sm text-gray-500 mb-2">
-                                Official URL:
-                            </p>
-                            <code className="bg-gray-100 px-3 py-2 rounded block text-sm mb-4">{AUTHORIZED_DOMAIN}</code>
-                            <p className="text-xs text-gray-400">App ID: {APP_ID}</p>
+                            <p className="text-gray-700 mb-4">This app is locked to the official domain.</p>
+                            <code className="bg-gray-100 px-3 py-2 rounded block text-sm">{AUTHORIZED_DOMAIN}</code>
                         </div>
                     </div>
                 );
@@ -410,159 +359,117 @@ const addPlayer = async () => {
                 return (
                     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
                         <div className="text-center">
-                            <div className="text-xl text-gray-600 mb-2">Loading session...</div>
-                            <div className="text-sm text-gray-500">Syncing with Firebase</div>
+                            <div className="text-xl text-gray-600">Loading session...</div>
                         </div>
                     </div>
                 );
             }
 
-            // Admin login modal
             const AdminLoginModal = () => {
                 const [localPhone, setLocalPhone] = React.useState('');
-                
-                const handlePhoneChange = (e) => {
-                    const value = e.target.value;
-                    const formatted = formatPhoneNumber(value);
-                    setLocalPhone(formatted);
-                };
-                
-                const handleVerify = () => {
-                    if (verifyAdmin(localPhone)) {
-                        setLocalPhone('');
-                    }
-                };
-                
                 return (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                         <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
                             <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-bold text-gray-800">Admin Verification</h2>
-                                <button onClick={() => setShowAdminLogin(false)} className="text-gray-500 hover:text-gray-700">
-                                    <Icon type="x" className="w-6 h-6" />
-                                </button>
+                                <h2 className="text-xl font-bold">Admin Verification</h2>
+                                <button onClick={() => setShowAdminLogin(false)}><Icon type="x" className="w-6 h-6" /></button>
                             </div>
-                            <p className="text-sm text-gray-600 mb-4">Enter your authorized phone number to access admin features.</p>
                             <input
                                 type="text"
                                 value={localPhone}
-                                onChange={handlePhoneChange}
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handleVerify();
-                                    }
-                                }}
+                                onChange={(e) => setLocalPhone(formatPhoneNumber(e.target.value))}
+                                onKeyPress={(e) => e.key === 'Enter' && verifyAdmin(localPhone) && setLocalPhone('')}
                                 placeholder="614-804-6856"
                                 maxLength="12"
-                                autoComplete="off"
-                                autoFocus
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+                                className="w-full px-4 py-3 border rounded-lg mb-4"
                             />
-                            <button
-                                onClick={handleVerify}
-                                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
-                            >
+                            <button onClick={() => verifyAdmin(localPhone) && setLocalPhone('')} className="w-full py-3 bg-blue-600 text-white rounded-lg">
                                 Verify Admin Access
                             </button>
-                            <p className="text-xs text-gray-500 mt-4 text-center">
-                                Only authorized administrators can manage game sessions.
-                            </p>
                         </div>
                     </div>
                 );
             };
 
-return (
+            return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-4">
                     {showAdminLogin && <AdminLoginModal />}
-                    
                     <div className="max-w-4xl mx-auto">
                         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                             <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                                 <div className="flex items-center gap-3">
                                     <Icon type="users" className="w-8 h-8 text-blue-600" />
-                                    <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Jerard Francis Badminton Court Manager</h1>
+                                    <h1 className="text-2xl md:text-3xl font-bold">Jerard Francis Badminton Court Manager</h1>
                                 </div>
                                 <div className="flex gap-2 flex-wrap">
-                                    <button
-                                        onClick={shareOnWhatsApp}
-                                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
-                                    >
-                                        <Icon type="share" />
-                                        <span className="hidden sm:inline">Share</span>
+                                    <button onClick={shareOnWhatsApp} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+                                        <Icon type="share" /><span className="hidden sm:inline">Share</span>
                                     </button>
-                                    <button
-                                        onClick={() => setShowStats(!showStats)}
-                                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
-                                    >
-                                        <Icon type="chart" />
-                                        <span className="hidden sm:inline">{showStats ? 'Hide' : 'Today'}</span>
+                                    <button onClick={() => setShowStats(!showStats)} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2">
+                                        <Icon type="chart" /><span className="hidden sm:inline">{showStats ? 'Hide' : 'Today'}</span>
                                     </button>
-                                    <button
-                                        onClick={() => setShowLifetimeStats(!showLifetimeStats)}
-                                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 flex items-center gap-2"
-                                    >
-                                        <Icon type="star" />
-                                        <span className="hidden sm:inline">All-Time</span>
+                                    <button onClick={() => setShowLifetimeStats(!showLifetimeStats)} className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 flex items-center gap-2">
+                                        <Icon type="star" /><span className="hidden sm:inline">All-Time</span>
                                     </button>
                                     {isAdmin ? (
-                                        <button
-                                            onClick={logoutAdmin}
-                                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
-                                            title={`Logged in as ${currentAdmin?.name}`}
-                                        >
-                                            <Icon type="x" />
-                                            <span className="hidden sm:inline">Logout</span>
+                                        <button onClick={logoutAdmin} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
+                                            <Icon type="x" /><span className="hidden sm:inline">Logout</span>
                                         </button>
                                     ) : (
-                                        <button
-                                            onClick={() => setShowAdminLogin(true)}
-                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                                        >
-                                            <Icon type="lock" />
-                                            <span className="hidden sm:inline">Admin</span>
+                                        <button onClick={() => setShowAdminLogin(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                                            <Icon type="lock" /><span className="hidden sm:inline">Admin</span>
                                         </button>
                                     )}
                                 </div>
                             </div>
 
-	
-	
+                            {isAdmin && currentAdmin && (
+                                <div className="mb-4 p-3 bg-green-100 rounded-lg flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                                            <span className="text-white font-bold text-sm">{currentAdmin.name.charAt(0)}</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-semibold text-green-800">Admin Mode Active</p>
+                                            <p className="text-xs text-gray-600">Managed by: {currentAdmin.name}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={generateAdminPassword} className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center gap-1">
+                                            <Icon type="lock" className="w-4 h-4" /><span>Generate Password</span>
+                                        </button>
+                                        <button onClick={logoutAdmin} className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200">Logout</button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mb-4 p-3 bg-gradient-to-r from-blue-100 to-green-100 rounded-lg flex items-center justify-between">
+                                <div>
+                                    {roundNumber > 0 && <p className="text-lg font-semibold text-blue-800">Round {roundNumber}</p>}
+                                    <p className="text-xs text-gray-600">Session: {sessionId} • Real-time sync</p>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Icon type="clock" className="w-4 h-4" />
+                                    <span>Resets in: <strong>{timeUntilReset}</strong></span>
+                                </div>
+                            </div>
+
                             <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Add Player
-                                </label>
+                                <label className="block text-sm font-medium mb-2">Add Player</label>
                                 <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={newPlayerName}
-                                        onChange={(e) => setNewPlayerName(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
-                                        placeholder="Enter player name"
-                                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
-                                    <button
-                                        onClick={addPlayer}
-                                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                                    >
-                                        <Icon type="plus" />
-                                        <span>Add</span>
+                                    <input type="text" value={newPlayerName} onChange={(e) => setNewPlayerName(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addPlayer()} placeholder="Enter player name" className="flex-1 px-4 py-2 border rounded-lg" />
+                                    <button onClick={addPlayer} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                                        <Icon type="plus" /><span>Add</span>
                                     </button>
                                 </div>
                             </div>
-<div className="mb-6">
+
+                            <div className="mb-6">
                                 <div className="flex justify-between items-center mb-3">
-                                    <h2 className="text-lg font-semibold text-gray-800">
-                                        Today's Players ({players.length})
-                                    </h2>
+                                    <h2 className="text-lg font-semibold">Today's Players ({players.length})</h2>
                                     {players.length > 0 && isAdmin && (
-                                        <button
-                                            onClick={clearAllPlayers}
-                                            className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center gap-1"
-                                        >
-                                            <Icon type="trash" className="w-4 h-4" />
-                                            <span>Clear All</span>
+                                        <button onClick={clearAllPlayers} className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center gap-1">
+                                            <Icon type="trash" className="w-4 h-4" /><span>Clear All</span>
                                         </button>
                                     )}
                                 </div>
@@ -575,20 +482,9 @@ return (
                                             const lifetime = lifetimeStats[player.name] || { wins: 0, losses: 0 };
                                             const isOnStreak = today.consecutiveWins >= 3;
                                             return (
-                                                <div
-                                                    key={index}
-                                                    className={`px-3 py-2 rounded-lg flex flex-wrap items-center gap-2 ${
-                                                        isOnStreak ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-400' : 'bg-blue-100 text-blue-800'
-                                                    }`}
-                                                >
+                                                <div key={index} className={`px-3 py-2 rounded-lg flex flex-wrap items-center gap-2 ${isOnStreak ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-400' : 'bg-blue-100 text-blue-800'}`}>
                                                     <span className="font-medium">{player.name}</span>
-                                                    <select
-                                                        value={player.skillLevel}
-                                                        onChange={(e) => updateSkillLevel(player.name, e.target.value)}
-                                                        disabled={!isAdmin}
-                                                        className={`px-2 py-1 text-xs rounded border border-gray-300 ${isAdmin ? 'bg-white cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}`}
-                                                        title={isAdmin ? "Skill Level" : "Only admins can change skill levels"}
-                                                    >
+                                                    <select value={player.skillLevel} onChange={(e) => updateSkillLevel(player.name, e.target.value)} disabled={!isAdmin} className={`px-2 py-1 text-xs rounded border ${isAdmin ? 'bg-white' : 'bg-gray-100 cursor-not-allowed'}`}>
                                                         <option value="1">⭐</option>
                                                         <option value="2">⭐⭐</option>
                                                         <option value="3">⭐⭐⭐</option>
@@ -600,11 +496,7 @@ return (
                                                     </span>
                                                     {isOnStreak && <Icon type="trophy" className="w-4 h-4" />}
                                                     {isAdmin && (
-                                                        <button
-                                                            onClick={() => removePlayer(player.name)}
-                                                            className="hover:bg-blue-200 rounded-full p-1"
-                                                            title="Remove player"
-                                                        >
+                                                        <button onClick={() => removePlayer(player.name)} className="hover:bg-blue-200 rounded-full p-1">
                                                             <Icon type="x" className="w-4 h-4" />
                                                         </button>
                                                     )}
@@ -616,32 +508,23 @@ return (
                             </div>
 
                             {!pairings && (
-                                <button
-                                    onClick={generatePairings}
-                                    disabled={players.length < 4 || !isAdmin}
-                                    className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                                        players.length >= 4 && isAdmin
-                                            ? 'bg-green-600 text-white hover:bg-green-700'
-                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    }`}
-                                    title={!isAdmin ? "Only admins can start games" : ""}
-                                >
+                                <button onClick={generatePairings} disabled={players.length < 4 || !isAdmin} className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${players.length >= 4 && isAdmin ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
                                     <Icon type="shuffle" />
-                                    <span>{!isAdmin ? '🔒 Admin Required to Start Game' : 'Start Game - Generate Pairings'}</span>
+                                    <span>{!isAdmin ? '🔒 Admin Required' : 'Start Game - Generate Pairings'}</span>
                                 </button>
                             )}
                         </div>
 
                         {showStats && Object.keys(todayStats).length > 0 && (
                             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
                                     <Icon type="chart" className="w-6 h-6 text-purple-500" />
                                     <span>Today's Statistics</span>
                                 </h2>
                                 <div className="overflow-x-auto">
                                     <table className="w-full">
                                         <thead>
-                                            <tr className="border-b-2 border-gray-300">
+                                            <tr className="border-b-2">
                                                 <th className="text-left py-2 px-3">Player</th>
                                                 <th className="text-center py-2 px-3">Wins</th>
                                                 <th className="text-center py-2 px-3">Losses</th>
@@ -650,29 +533,24 @@ return (
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {Object.entries(todayStats)
-                                                .sort((a, b) => b[1].wins - a[1].wins)
-                                                .map(([player, stats]) => {
-                                                    const winRate = stats.gamesPlayed > 0 
-                                                        ? ((stats.wins / stats.gamesPlayed) * 100).toFixed(1) 
-                                                        : '0.0';
-                                                    const isOnStreak = stats.consecutiveWins >= 3;
-                                                    return (
-                                                        <tr key={player} className={`border-b ${isOnStreak ? 'bg-yellow-50' : ''}`}>
-                                                            <td className="py-2 px-3 font-medium">{player}</td>
-                                                            <td className="text-center py-2 px-3 text-green-600 font-semibold">{stats.wins}</td>
-                                                            <td className="text-center py-2 px-3 text-red-600 font-semibold">{stats.losses}</td>
-                                                            <td className="text-center py-2 px-3">{winRate}%</td>
-                                                            <td className="text-center py-2 px-3">
-                                                                {stats.consecutiveWins > 0 ? (
-                                                                    <span className={`px-2 py-1 rounded ${stats.consecutiveWins >= 3 ? 'bg-yellow-200 text-yellow-800 font-bold' : 'bg-gray-200 text-gray-700'}`}>
-                                                                        {stats.consecutiveWins} 🔥
-                                                                    </span>
-                                                                ) : '-'}
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
+                                            {Object.entries(todayStats).sort((a, b) => b[1].wins - a[1].wins).map(([player, stats]) => {
+                                                const winRate = stats.gamesPlayed > 0 ? ((stats.wins / stats.gamesPlayed) * 100).toFixed(1) : '0.0';
+                                                return (
+                                                    <tr key={player} className={`border-b ${stats.consecutiveWins >= 3 ? 'bg-yellow-50' : ''}`}>
+                                                        <td className="py-2 px-3 font-medium">{player}</td>
+                                                        <td className="text-center py-2 px-3 text-green-600 font-semibold">{stats.wins}</td>
+                                                        <td className="text-center py-2 px-3 text-red-600 font-semibold">{stats.losses}</td>
+                                                        <td className="text-center py-2 px-3">{winRate}%</td>
+                                                        <td className="text-center py-2 px-3">
+                                                            {stats.consecutiveWins > 0 ? (
+                                                                <span className={`px-2 py-1 rounded ${stats.consecutiveWins >= 3 ? 'bg-yellow-200 font-bold' : 'bg-gray-200'}`}>
+                                                                    {stats.consecutiveWins} 🔥
+                                                                </span>
+                                                            ) : '-'}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -681,38 +559,34 @@ return (
 
                         {showLifetimeStats && Object.keys(lifetimeStats).length > 0 && (
                             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
                                     <Icon type="star" className="w-6 h-6 text-yellow-500" />
                                     <span>All-Time Statistics</span>
                                 </h2>
                                 <div className="overflow-x-auto">
                                     <table className="w-full">
                                         <thead>
-                                            <tr className="border-b-2 border-gray-300">
+                                            <tr className="border-b-2">
                                                 <th className="text-left py-2 px-3">Player</th>
                                                 <th className="text-center py-2 px-3">Total Wins</th>
                                                 <th className="text-center py-2 px-3">Total Losses</th>
                                                 <th className="text-center py-2 px-3">Win Rate</th>
-                                                <th className="text-center py-2 px-3">Games Played</th>
+                                                <th className="text-center py-2 px-3">Games</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {Object.entries(lifetimeStats)
-                                                .sort((a, b) => b[1].wins - a[1].wins)
-                                                .map(([player, stats]) => {
-                                                    const winRate = stats.gamesPlayed > 0 
-                                                        ? ((stats.wins / stats.gamesPlayed) * 100).toFixed(1) 
-                                                        : '0.0';
-                                                    return (
-                                                        <tr key={player} className="border-b">
-                                                            <td className="py-2 px-3 font-medium">{player}</td>
-                                                            <td className="text-center py-2 px-3 text-green-600 font-semibold">{stats.wins}</td>
-                                                            <td className="text-center py-2 px-3 text-red-600 font-semibold">{stats.losses}</td>
-                                                            <td className="text-center py-2 px-3">{winRate}%</td>
-                                                            <td className="text-center py-2 px-3">{stats.gamesPlayed}</td>
-                                                        </tr>
-                                                    );
-                                                })}
+                                            {Object.entries(lifetimeStats).sort((a, b) => b[1].wins - a[1].wins).map(([player, stats]) => {
+                                                const winRate = stats.gamesPlayed > 0 ? ((stats.wins / stats.gamesPlayed) * 100).toFixed(1) : '0.0';
+                                                return (
+                                                    <tr key={player} className="border-b">
+                                                        <td className="py-2 px-3 font-medium">{player}</td>
+                                                        <td className="text-center py-2 px-3 text-green-600 font-semibold">{stats.wins}</td>
+                                                        <td className="text-center py-2 px-3 text-red-600 font-semibold">{stats.losses}</td>
+                                                        <td className="text-center py-2 px-3">{winRate}%</td>
+                                                        <td className="text-center py-2 px-3">{stats.gamesPlayed}</td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -721,43 +595,75 @@ return (
 
                         {pairings && (
                             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-4">Court Assignments</h2>
+                                <h2 className="text-2xl font-bold mb-4">Court Assignments</h2>
                                 
                                 {pairings.courts.map((court, courtIndex) => (
-                                    <div key={courtIndex} className="mb-6 p-4 border-2 border-gray-300 rounded-lg bg-gradient-to-br from-green-50 to-blue-50">
-                                        <h3 className="text-xl font-semibold text-gray-800 mb-3">Court {courtIndex + 1}</h3>
-        	
+                                    <div key={courtIndex} className="mb-6 p-4 border-2 rounded-lg bg-gradient-to-br from-green-50 to-blue-50">
+                                        <h3 className="text-xl font-semibold mb-3">Court {courtIndex + 1}</h3>
+                                        <div className="grid md:grid-cols-2 gap-4 mb-4">
+                                            <div className="p-3 bg-blue-100 rounded-lg">
+                                                <p className="font-semibold text-blue-800 mb-2">Team 1</p>
+                                                {court.team1.map((player, i) => (
+                                                    <p key={i} className="text-gray-700">
+                                                        {player.name}
+                                                        <span className="text-xs ml-2 bg-white px-2 py-1 rounded">
+                                                            Base: {'⭐'.repeat(player.skillLevel)} → Current: {'⭐'.repeat(player.dynamicRating || player.skillLevel)}
+                                                        </span>
+                                                    </p>
+                                                ))}
+                                            </div>
+                                            <div className="p-3 bg-red-100 rounded-lg">
+                                                <p className="font-semibold text-red-800 mb-2">Team 2</p>
+                                                {court.team2.map((player, i) => (
+                                                    <p key={i} className="text-gray-700">
+                                                        {player.name}
+                                                        <span className="text-xs ml-2 bg-white px-2 py-1 rounded">
+                                                            Base: {'⭐'.repeat(player.skillLevel)} → Current: {'⭐'.repeat(player.dynamicRating || player.skillLevel)}
+                                                        </span>
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Team 1 Score</label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={scores[courtIndex]?.team1 ?? ''}
-                                                    onChange={(e) => handleScoreChange(courtIndex, 'team1', e.target.value)}
-                                                    disabled={!isAdmin}
-                                                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!isAdmin ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                                                    placeholder="0"
-                                                />
+                                                <label className="block text-sm font-medium mb-1">Team 1 Score</label>
+                                                <input type="number" min="0" value={scores[courtIndex]?.team1 ?? ''} onChange={(e) => handleScoreChange(courtIndex, 'team1', e.target.value)} disabled={!isAdmin} className={`w-full px-3 py-2 border rounded-lg ${!isAdmin ? 'bg-gray-100' : ''}`} placeholder="0" />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Team 2 Score</label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={scores[courtIndex]?.team2 ?? ''}
-                                                    onChange={(e) => handleScoreChange(courtIndex, 'team2', e.target.value)}
-                                                    disabled={!isAdmin}
-                                                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!isAdmin ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                                                    placeholder="0"
-                                                />
+                                                <label className="block text-sm font-medium mb-1">Team 2 Score</label>
+                                                <input type="number" min="0" value={scores[courtIndex]?.team2 ?? ''} onChange={(e) => handleScoreChange(courtIndex, 'team2', e.target.value)} disabled={!isAdmin} className={`w-full px-3 py-2 border rounded-lg ${!isAdmin ? 'bg-gray-100' : ''}`} placeholder="0" />
                                             </div>
                                         </div>
                                     </div>
                                 ))}
 
+                                {pairings.resting && pairings.resting.length > 0 && (
+                                    <div className="mb-6 p-4 bg-orange-50 border-2 border-orange-400 rounded-lg">
+                                        <h3 className="text-lg font-semibold text-orange-800 mb-2 flex items-center gap-2">
+                                            <Icon type="trophy" className="w-5 h-5" />
+                                            Resting Players (3+ Consecutive Wins)
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2 mb-3">
+                                            {pairings.resting.map((player, i) => (
+                                                <span key={i} className="px-3 py-2 bg-orange-200 text-orange-900 rounded-lg font-medium flex items-center gap-2">
+                                                    {player.name}
+                                                    <span className="text-xs bg-orange-300 px-2 py-1 rounded">
+                                                        Base: {'⭐'.repeat(player.skillLevel)} → Current: {'⭐'.repeat(player.dynamicRating)}
+                                                    </span>
+                                                    <span className="text-xs bg-yellow-300 px-2 py-1 rounded font-bold">
+                                                        {player.consecutiveWins} wins 🔥
+                                                    </span>
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <p className="text-sm text-orange-700">
+                                            These players are sitting out this round due to their hot streak!
+                                        </p>
+                                    </div>
+                                )}
+
                                 {pairings.remaining.length > 0 && (
-                                    <div className="mt-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+                                    <div className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
                                         <h3 className="text-lg font-semibold text-yellow-800 mb-2">Waiting Players</h3>
                                         <div className="flex flex-wrap gap-2">
                                             {pairings.remaining.map((player, i) => (
@@ -766,21 +672,12 @@ return (
                                                 </span>
                                             ))}
                                         </div>
-                                        <p className="text-sm text-yellow-700 mt-2">These players will be prioritized in the next round.</p>
+                                        <p className="text-sm text-yellow-700 mt-2">These players will be prioritized next round.</p>
                                     </div>
                                 )}
 
-                                <button
-                                    onClick={submitScores}
-                                    disabled={!allScoresEntered() || !isAdmin}
-                                    className={`w-full mt-6 py-3 rounded-lg font-semibold ${
-                                        allScoresEntered() && isAdmin
-                                            ? 'bg-green-600 text-white hover:bg-green-700'
-                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    }`}
-                                    title={!isAdmin ? "Only admins can submit scores" : ""}
-                                >
-                                    {!isAdmin ? '🔒 Admin Required to Submit Scores' : 'Submit Scores & Next Round'}
+                                <button onClick={submitScores} disabled={!allScoresEntered() || !isAdmin} className={`w-full mt-6 py-3 rounded-lg font-semibold ${allScoresEntered() && isAdmin ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
+                                    {!isAdmin ? '🔒 Admin Required to Submit' : 'Submit Scores & Next Round'}
                                 </button>
                             </div>
                         )}
@@ -789,7 +686,7 @@ return (
             );
         }
 
-        ReactDOM.render(<BadmintonPairingApp />, document.getElementById('root'));
+	ReactDOM.render(<BadmintonPairingApp />, document.getElementById('root'));
     </script>
 </body>
-</html>pairings.remaining.length
+</html>
