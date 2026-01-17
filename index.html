@@ -66,6 +66,7 @@ function BadmintonPairingApp() {
             const sessionId = getSessionId();
             const sessionRef = db.collection('sessions').doc(sessionId);
             const passwordsRef = db.collection('adminPasswords');
+            const lifetimeStatsRef = db.collection('lifetimeStats').doc('global');
 
             // State variables
             const [players, setPlayers] = useState([]);
@@ -107,13 +108,21 @@ function BadmintonPairingApp() {
                 return () => unsubscribe();
             }, [sessionId, domainError]);
 
-            // Load lifetime stats from localStorage
+            // Load lifetime stats from Firebase
             useEffect(() => {
-                try {
-                    const data = localStorage.getItem('lifetime_stats_' + APP_ID);
-                    if (data) setLifetimeStats(JSON.parse(data));
-                } catch (error) { console.error('Error:', error); }
-            }, []);
+                if (domainError) return;
+                
+                const unsubscribe = lifetimeStatsRef.onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        setLifetimeStats(data.stats || {});
+                    }
+                }, (error) => {
+                    console.error('Error loading lifetime stats:', error);
+                });
+                
+                return () => unsubscribe();
+            }, [domainError]);
 
             // Update countdown timer
             useEffect(() => {
@@ -139,11 +148,13 @@ function BadmintonPairingApp() {
                 } catch (error) { console.error('Error:', error); }
             };
 
-            // Save lifetime stats to localStorage (per device)
-            const saveLifetimeStats = (stats) => {
+            // Save lifetime stats to Firebase (shared across all devices)
+            const saveLifetimeStats = async (stats) => {
                 try {
-                    localStorage.setItem('lifetime_stats_' + APP_ID, JSON.stringify(stats));
-                } catch (error) { console.error('Error:', error); }
+                    await lifetimeStatsRef.set({ stats }, { merge: true });
+                } catch (error) { 
+                    console.error('Error saving lifetime stats:', error); 
+                }
             };
 
             // Format phone number
@@ -317,7 +328,7 @@ function BadmintonPairingApp() {
                     }
                 };
                 setLifetimeStats(updatedLifetime);
-                saveLifetimeStats(updatedLifetime);
+                await saveLifetimeStats(updatedLifetime);
                 await saveToFirebase({ players: updatedPlayers });
             };
 
@@ -352,8 +363,10 @@ const clearAllFirebaseData = async () => {
     }
     
     const confirmation = window.prompt(
-        'WARNING: This will delete ALL session data from Firebase!\n\n' +
-        'This includes all historical games, stats, and pairings.\n\n' +
+        'WARNING: This will delete ALL data from Firebase!\n\n' +
+        '- All session data (games, pairings, stats)\n' +
+        '- All lifetime statistics\n' +
+        '- All admin passwords\n\n' +
         'Type "DELETE ALL" to confirm:'
     );
     
@@ -364,14 +377,22 @@ const clearAllFirebaseData = async () => {
     
     try {
         setLoading(true);
+        const deletePromises = [];
         
         // Delete all session documents
         const sessionsSnapshot = await db.collection('sessions').get();
-        const deletePromises = [];
-        
         sessionsSnapshot.forEach(doc => {
             deletePromises.push(doc.ref.delete());
         });
+        
+        // Delete all admin passwords
+        const passwordsSnapshot = await db.collection('adminPasswords').get();
+        passwordsSnapshot.forEach(doc => {
+            deletePromises.push(doc.ref.delete());
+        });
+        
+        // Delete lifetime stats
+        deletePromises.push(lifetimeStatsRef.delete());
         
         await Promise.all(deletePromises);
         
@@ -380,13 +401,17 @@ const clearAllFirebaseData = async () => {
         setPairings(null);
         setScores({});
         setTodayStats({});
+        setLifetimeStats({});
         setRoundNumber(0);
         
-        alert(`Successfully deleted ${deletePromises.length} session(s) from Firebase!`);
+        alert(`Successfully deleted all data from Firebase!\n\n` +
+              `- Sessions: ${sessionsSnapshot.size}\n` +
+              `- Passwords: ${passwordsSnapshot.size}\n` +
+              `- Lifetime stats: Cleared`);
         setLoading(false);
         
     } catch (error) {
-        console.error('Error deleting Firebase data:', error);
+        console.error('Error deleting data:', error);
         alert('Error deleting data. Check console for details.');
         setLoading(false);
     }
@@ -578,7 +603,7 @@ const clearOldPasswords = async () => {
 
                 await saveToFirebase({ todayStats: newTodayStats });
                 setLifetimeStats(newLifetimeStats);
-                saveLifetimeStats(newLifetimeStats);
+                await saveLifetimeStats(newLifetimeStats);
                 generatePairings();
             };
 
@@ -1217,5 +1242,6 @@ const clearOldPasswords = async () => {
     </script>
 </body>
 </html>
+
 
 
