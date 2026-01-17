@@ -343,6 +343,96 @@ function BadmintonPairingApp() {
                 }
             };
 
+// ADD AFTER clearAllPlayers function
+
+const clearAllFirebaseData = async () => {
+    if (!isAdmin) {
+        alert('Only admins can clear Firebase data');
+        return;
+    }
+    
+    const confirmation = window.prompt(
+        'WARNING: This will delete ALL session data from Firebase!\n\n' +
+        'This includes all historical games, stats, and pairings.\n\n' +
+        'Type "DELETE ALL" to confirm:'
+    );
+    
+    if (confirmation !== 'DELETE ALL') {
+        alert('Cancelled. No data was deleted.');
+        return;
+    }
+    
+    try {
+        setLoading(true);
+        
+        // Delete all session documents
+        const sessionsSnapshot = await db.collection('sessions').get();
+        const deletePromises = [];
+        
+        sessionsSnapshot.forEach(doc => {
+            deletePromises.push(doc.ref.delete());
+        });
+        
+        await Promise.all(deletePromises);
+        
+        // Clear local state
+        setPlayers([]);
+        setPairings(null);
+        setScores({});
+        setTodayStats({});
+        setRoundNumber(0);
+        
+        alert(`Successfully deleted ${deletePromises.length} session(s) from Firebase!`);
+        setLoading(false);
+        
+    } catch (error) {
+        console.error('Error deleting Firebase data:', error);
+        alert('Error deleting data. Check console for details.');
+        setLoading(false);
+    }
+};
+
+const clearOldPasswords = async () => {
+    if (!isAdmin) {
+        alert('Only admins can clear passwords');
+        return;
+    }
+    
+    if (!window.confirm('Delete all expired admin passwords (24+ hours old)?')) {
+        return;
+    }
+    
+    try {
+        const now = new Date();
+        const passwordsSnapshot = await db.collection('adminPasswords').get();
+        const deletePromises = [];
+        
+        passwordsSnapshot.forEach(doc => {
+            const data = doc.data();
+            const createdAt = data.createdAt?.toDate();
+            const hoursSinceCreation = (now - createdAt) / (1000 * 60 * 60);
+            
+            // Delete if older than 24 hours
+            if (hoursSinceCreation > 24) {
+                deletePromises.push(doc.ref.delete());
+            }
+        });
+        
+        await Promise.all(deletePromises);
+        
+        if (deletePromises.length > 0) {
+            alert(`Deleted ${deletePromises.length} expired password(s)!`);
+        } else {
+            alert('No expired passwords found.');
+        }
+        
+    } catch (error) {
+        console.error('Error deleting passwords:', error);
+        alert('Error deleting passwords. Check console.');
+    }
+};
+
+    
 // Generate pairings with dynamic rating system
             const generatePairings = async () => {
                 if (!isAdmin) { 
@@ -708,7 +798,7 @@ function BadmintonPairingApp() {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
+<div className="flex gap-2 flex-wrap">
                                         <button
                                             onClick={generateAdminPassword}
                                             className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center gap-1"
@@ -717,6 +807,25 @@ function BadmintonPairingApp() {
                                             <Icon type="key" className="w-4 h-4" />
                                             <span className="hidden sm:inline">Generate Password</span>
                                         </button>
+                                        
+                                        <button
+                                            onClick={clearOldPasswords}
+                                            className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 flex items-center gap-1"
+                                            title="Delete expired passwords (24+ hours old)"
+                                        >
+                                            <Icon type="trash" className="w-4 h-4" />
+                                            <span className="hidden sm:inline">Clear Old Passwords</span>
+                                        </button>
+                                        
+                                        <button
+                                            onClick={clearAllFirebaseData}
+                                            className="px-3 py-1 text-sm bg-red-200 text-red-800 rounded hover:bg-red-300 flex items-center gap-1"
+                                            title="WARNING: Deletes ALL session data from Firebase"
+                                        >
+                                            <Icon type="trash" className="w-4 h-4" />
+                                            <span className="hidden sm:inline">Clear All Data</span>
+                                        </button>
+                                        
                                         <button
                                             onClick={logoutAdmin}
                                             className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
@@ -1108,4 +1217,5 @@ function BadmintonPairingApp() {
     </script>
 </body>
 </html>
+
 
